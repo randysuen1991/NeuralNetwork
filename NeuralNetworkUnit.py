@@ -15,4 +15,9 @@ class NeuronLayer(NeuralNetworkUnit):
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(shape=(self.input_dim,1),dtype=tf.float64,mean=0,stddev=0.1))
         self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(shape=(1,),dtype=tf.float64,mean=0,stddev=0.1))
         self.output = tf.map_fn(fn=lambda output: tf.matmul(output,self.parameters['w'])+self.parameters['b'],elems = self.input)
-    
+class ConvolutionUnit():
+    def __init__(self,dtype=tf.float64):
+        self.dtype = dtype
+    def Initialize(self,input_shape):
+        
+        
