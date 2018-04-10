@@ -1,9 +1,14 @@
+import sys
+sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regreesor')
 import Classifier as C
 import tensorflow as tf
 import numpy as np
 
 
-class NeuralNetworkClassifier(C.Classifier):
+
+
+
+class ConvolutionClassifier(C.Classifier):
     
         
     def __init__(self,input_shape,num_classes,keep_prob=0.8,activation = tf.sigmoid,**kwargs):
