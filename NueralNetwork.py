@@ -2,13 +2,13 @@
 import sys
 sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regreesor')
 import Classifier as C
-
+import NeuralNetworkLoss as NNL
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
 
-
-class ConvolutionClassifier(C.Classifier):
+class NeuralNetwork(C.Classifier):
     
         
     def __init__(self,num_classes,keep_prob=0.8,activation = tf.sigmoid,**kwargs):
@@ -26,34 +26,64 @@ class ConvolutionClassifier(C.Classifier):
         self.image_type = kwargs.get('image_type','gray')
     
         
+        
+        
+        
+    # The following two functions connect all the layers.    
+    def _Initialize(self,output_dim,recurrentunit):
+        recurrentunit.input = self.output
+        recurrentunit.Initialize(output_dim)
+        self.output = recurrentunit.output
+        return int(self.output.shape[2])
+    
+    def _Initialize_Variables(self,input_dim):
+        unit = self.layers[0]
+        unit.input = self.input
+        unit.Initialize(input_dim)
+        self.output = unit.output
+        input_dim = int(unit.output.shape[2])
+        for unit in self.layers[1:] :
+            input_dim = self._Initialize(input_dim,unit)
+        
+        
+        
+        
+        
     def Build(self,layerunit):
         self.layers.append(layerunit)
         self.num_layers += 1
-    def Fit(self,X_train,Y_train,loss_fun,num_steps=5000,loss_fun=NNL.MeanSquared,
+    def Fit(self,X_train,Y_train,num_steps=5000,loss_fun=NNL.MeanSquared,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
         
         self.batch_size = int(X_train.shape[0])
-        
-        self.loss_fun = loss_fun
         self._Initialize_Variables(int(X_train.shape[2]))
+        
+        
         loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.batch_size)
-        
-        
-    def Compile(self):
-        init = tf.global_variables_initializer()
-        self.loss = tf.reduce_mean(-tf.reduce_sum(self.out * self.y,reduction_indices=[1]))
-        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001).minimize(self.loss)
-        self.sess.run(init)
-        
-        
-    def Fit(self,x,y):
-        self.Compile()
-        cost = self.sess.run([self.loss,self.optimizer],feed_dict={self.x:x,self.y:y})            
-        return cost
-    def Run(self,accuracy,x,y):
-        return self.sess.run([accuracy],feed_dict={self.x:x,self.y:y})
+        self.sess.run(tf.global_variables_initializer())
+        grads_and_vars = self.optimizer.compute_gradients(loss)
+        train = self.optimizer.apply_gradients(grads_and_vars)
+        train_losses = list()
+        for i in range(num_steps):
+            _, train_loss = self.sess.run(fetches=[train,loss],feed_dict={self.input:X_train,self.target:Y_train})
+            train_losses.append(train_loss)
+
+            if show_graph :
+#           Display an update every 50 iterations
+                if i % 50 == 0:
+                    plt.plot(train_losses, '-b', label='Train loss')
+                    plt.legend(loc=0)
+                    plt.title('Loss')
+                    plt.xlabel('Iteration')
+                    plt.ylabel('Loss')
+                    plt.show()
+                    print('Iteration: %d, train loss: %.4f' % (i, train_loss))
+        return train_losses
+    
+    
+    
     
     @classmethod
     def Construct(cls,instance,layer_type,keep_prob=None,**kwargs):
