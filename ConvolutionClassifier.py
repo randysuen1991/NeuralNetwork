@@ -1,37 +1,44 @@
+# import the Classifier module
 import sys
 sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regreesor')
 import Classifier as C
+
 import tensorflow as tf
 import numpy as np
-
-
 
 
 
 class ConvolutionClassifier(C.Classifier):
     
         
-    def __init__(self,input_shape,num_classes,keep_prob=0.8,activation = tf.sigmoid,**kwargs):
+    def __init__(self,num_classes,keep_prob=0.8,activation = tf.sigmoid,**kwargs):
         super().__init__()
-        self.x = tf.placeholder(dtype=tf.float32,shape=input_shape)
-        self.y = tf.placeholder(dtype=tf.float32,shape=[None,num_classes])
+        #[None,None,None,None]=[batch_size,length,width,rgb order]
+        self.input = tf.placeholder(dtype=tf.float32,shape=[None,None,None,None])
+        self.output = self.input
+        #[None,None] = [batch_size,label]
+        self.target = tf.placeholder(dtype=tf.float32,shape=[None,num_classes])
         self.transfer_function = activation
         self.sess = tf.Session()
-        self.counts = self._Initialize_counts()
-        self.weights = dict()
-        self.out = self.x
+        self.parameters = dict()
+        self.layers = list()
         self.keep_prob = keep_prob
         self.image_type = kwargs.get('image_type','gray')
-    def _Initialize_counts(self):
-        counts = dict()
-        counts['bias'] = 0
-        counts['conv2d'] = 0
-        counts['fc'] = 0
-        counts['max_pooling'] = 0
-        counts['avg_pooling'] = 0
-        counts['dropout'] = 0
-        return counts
+    
         
+    def Build(self,layerunit):
+        self.layers.append(layerunit)
+        self.num_layers += 1
+    def Fit(self,X_train,Y_train,loss_fun,num_steps=5000,loss_fun=NNL.MeanSquared,
+            optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
+        self.optimizer = optimizer
+        self.loss_fun = loss_fun
+        
+        self.batch_size = int(X_train.shape[0])
+        
+        self.loss_fun = loss_fun
+        self._Initialize_Variables(int(X_train.shape[2]))
+        loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.batch_size)
         
         
     def Compile(self):
