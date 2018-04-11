@@ -22,8 +22,8 @@ class NeuralNetwork(C.Classifier):
         self.sess = tf.Session()
         self.parameters = dict()
         self.layers = list()
-        self.keep_prob = keep_prob
-        self.image_type = kwargs.get('image_type','gray')
+        # Presume the image_type being grayscales
+        self.num_channels = kwargs.get('num_channels',1)
     
         
         
@@ -50,9 +50,23 @@ class NeuralNetwork(C.Classifier):
     def Flatten(self):
         self.output = tf.reshape(self.output,shape=[-1,int(np.prod(self.output.__dict__['_shape'][1:]))])
     
+    def AvgPooling(self,shape,ksize,**kwargs):
+        ksize = [1] + ksize
+        ksize += [self.num_channels]
+        self.output = tf.nn.avg_pool(value=self.outpt,ksize=ksize,strides=kwargs.get('strides',[1,1,1,1]),padding=kwargs.get('padding','SAME'))
+        
+    def MaxPooling(self,shape,ksize,**kwargs):
+        ksize = [1] + ksize
+        ksize += [self.num_channels]
+        self.output = tf.nn.max_pool(value=self.outpt,ksize=ksize,strides=kwargs.get('strides',[1,1,1,1]),padding=kwargs.get('padding','SAME'))
+        
+    def Dropout(self,keep_prob):
+        self.output = tf.nn.dropout(self.output,keep_prob=keep_prob)
     def Build(self,layerunit):
         self.layers.append(layerunit)
         self.num_layers += 1
+        
+        
     def Fit(self,X_train,Y_train,num_steps=5000,loss_fun=NNL.MeanSquared,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
         self.optimizer = optimizer
