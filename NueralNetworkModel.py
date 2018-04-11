@@ -47,8 +47,9 @@ class NeuralNetwork(C.Classifier):
         
         
         
-        
-        
+    def Flatten(self):
+        self.output = tf.reshape(self.output,shape=[-1,int(np.prod(self.output.__dict__['_shape'][1:]))])
+    
     def Build(self,layerunit):
         self.layers.append(layerunit)
         self.num_layers += 1
@@ -96,6 +97,7 @@ class NeuralNetwork(C.Classifier):
             shape = kwargs.get('shape')
             num_channels = int(instance.out.__dict__['_shape'][3])
             shape.insert(2,num_channels)
+            
             c_init = tf.truncated_normal(shape)
             c = tf.Variable(initial_value=c_init)
             b_init = tf.truncated_normal([shape[-1]])
@@ -108,11 +110,8 @@ class NeuralNetwork(C.Classifier):
             instance.out = instance.transfer_function(tf.add(conv2d,b))
 
         elif layer_type == 'pooling':
-                
             pooling_type = kwargs.get('pooling_type',None)
             instance.counts[pooling_type+'_pooling'] += 1
-                
-                
             ksize = [1]
             ksize = ksize + kwargs.get('ksize',[1,1])
             if instance.image_type == 'gray':
@@ -123,26 +122,24 @@ class NeuralNetwork(C.Classifier):
                 instance.out = tf.nn.avg_pool(value=instance.out,ksize=ksize,strides=kwargs.get('strides',[1,1,1,1]),padding=kwargs.get('padding','SAME'))
             elif pooling_type == 'max' :
                 instance.out = tf.nn.max_pool(value=instance.out,ksize=ksize,strides=kwargs.get('strides',[1,1,1,1]),padding=kwargs.get('padding','SAME'))
-            elif layer_type =='dropout':
+        elif layer_type =='dropout':
                 instance.counts['dropout'] += 1
                 instance.out = tf.nn.dropout(x = instance.out,keep_prob=kwargs.get('keep_prob',0.8))
             
-            elif layer_type == 'flatten':
-                instance.out = tf.reshape(instance.out,shape=[-1,int(np.prod(instance.out.__dict__['_shape'][1:]))])
-                
-            elif layer_type == 'fc':
+        elif layer_type == 'flatten':
+            instance.out = tf.reshape(instance.out,shape=[-1,int(np.prod(instance.out.__dict__['_shape'][1:]))])    
+        elif layer_type == 'fc':
+            instance.counts['fc'] += 1
+            instance.counts['bias'] += 1
+            f_init = tf.truncated_normal([int(instance.out.__dict__['_shape'][1]),kwargs.get('shape')])
+            f = tf.Variable(initial_value=f_init)
+            b_init = tf.truncated_normal([kwargs.get('shape')])
+            b = tf.Variable(initial_value=b_init)
             
-                instance.counts['fc'] += 1
-                instance.counts['bias'] += 1
-                f_init = tf.truncated_normal([int(instance.out.__dict__['_shape'][1]),kwargs.get('shape')])
-                f = tf.Variable(initial_value=f_init)
-                b_init = tf.truncated_normal([kwargs.get('shape')])
-                b = tf.Variable(initial_value=b_init)
-            
-                instance.weights['fc_'+str(instance.counts['fc'])] = f
-                instance.weights['bias_'+str(instance.counts['bias'])] = b
+            instance.weights['fc_'+str(instance.counts['fc'])] = f
+            instance.weights['bias_'+str(instance.counts['bias'])] = b
                 
-                if kwargs.get('last',False) :
-                    instance.out = tf.nn.softmax(tf.add(tf.matmul(instance.out,f),b))
-                else :
-                    instance.out = instance.transfer_function(tf.add(tf.matmul(instance.out,f),b))
+            if kwargs.get('last',False) :
+                instance.out = tf.nn.softmax(tf.add(tf.matmul(instance.out,f),b))
+            else :
+                instance.out = instance.transfer_function(tf.add(tf.matmul(instance.out,f),b))
