@@ -8,5 +8,5 @@ MNIST original images versus the reconstructed ones.
 ![](https://github.com/randysuen1991/Neural-Network/blob/master/figures/autoencoder_mnist_loss.png)
 ![](https://github.com/randysuen1991/Neural-Network/blob/master/figures/autoencoder_mnist.png) 
 
-# Classifying example
+# Classification example
 In example.py file, I use convolution neural network to classify MNIST daraset in example2.
