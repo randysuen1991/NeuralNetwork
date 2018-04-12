@@ -59,10 +59,11 @@ class NeuralNetworkModel(C.Classifier):
         self.loss_fun = loss_fun
         
         self.batch_size = int(X_train.shape[0])
+        # if the data are images, then the first layer should be some layers like convolution, pooling ....
         if len(X_train.shape) == 4 :
             self._Initialize_Variables(None)
         else:
-            self._Initialize_Variables(int(X_train.shape[2]))
+            self._Initialize_Variables(int(X_train.shape[1]))
         
         
         loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.batch_size)
