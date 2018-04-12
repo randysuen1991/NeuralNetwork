@@ -33,6 +33,7 @@ class NeuralNetworkModel(C.Classifier):
         return int(self.output.shape[1])
     
     def _Initialize_Variables(self,input_dim):
+        
         unit = self.layers[0]
         unit.input = self.input
         if input_dim != None:
@@ -40,6 +41,7 @@ class NeuralNetworkModel(C.Classifier):
         else :
             unit.Initialize()
         self.output = unit.output
+        
         input_dim = int(unit.output.shape[1])
         for unit in self.layers[1:] :
             input_dim = self._Initialize(input_dim,unit)
@@ -72,6 +74,7 @@ class NeuralNetworkModel(C.Classifier):
         grads_and_vars = self.optimizer.compute_gradients(loss)
         train = self.optimizer.apply_gradients(grads_and_vars)
         train_losses = list()
+        
         for i in range(num_steps):
             _, train_loss = self.sess.run(fetches=[train,loss],feed_dict={self.input:X_train,self.target:Y_train})
             train_losses.append(train_loss)
@@ -87,3 +90,7 @@ class NeuralNetworkModel(C.Classifier):
                     plt.show()
                     print('Iteration: %d, train loss: %.4f' % (i, train_loss))
         return train_losses
+    
+    def Predict(self,X_test):
+        results = self.sess.run(fetches=self.output,feed_dict={self.input:X_test})
+        return results        
