@@ -34,12 +34,15 @@ class NeuralNetwork(C.Classifier):
         recurrentunit.input = self.output
         recurrentunit.Initialize(output_dim)
         self.output = recurrentunit.output
-        return int(self.output.shape[2])
+        return int(self.output.shape[1])
     
     def _Initialize_Variables(self,input_dim):
         unit = self.layers[0]
         unit.input = self.input
-        unit.Initialize(input_dim)
+        if input_dim != None:
+            unit.Initialize(input_dim)
+        else :
+            unit.Initialize()
         self.output = unit.output
         input_dim = int(unit.output.shape[2])
         for unit in self.layers[1:] :
@@ -62,10 +65,10 @@ class NeuralNetwork(C.Classifier):
         
     def Dropout(self,keep_prob):
         self.output = tf.nn.dropout(self.output,keep_prob=keep_prob)
+    
     def Build(self,layerunit):
         self.layers.append(layerunit)
-        self.num_layers += 1
-        
+        self.num_layers += 1    
         
     def Fit(self,X_train,Y_train,num_steps=5000,loss_fun=NNL.MeanSquared,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
@@ -73,7 +76,10 @@ class NeuralNetwork(C.Classifier):
         self.loss_fun = loss_fun
         
         self.batch_size = int(X_train.shape[0])
-        self._Initialize_Variables(int(X_train.shape[2]))
+        if len(X_train.shape) == 4 :
+            self._Initialize_Variables(None)
+        else:
+            self._Initialize_Variables(int(X_train.shape[2]))
         
         
         loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.batch_size)
