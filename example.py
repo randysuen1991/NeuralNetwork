@@ -8,6 +8,7 @@ def example1():
     mnist = input_data.read_data_sets('MNIST_data/',one_hot=True)
     
     X_train = mnist.train.images
+    # To reduce computational cost, we let the training size be 500.
     X_train = X_train[:500,:]
     
     model = NNM.NeuralNetworkModel()
@@ -41,5 +42,16 @@ def example1():
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
     plt.show()
+    
+# In this example, I use Convolution Neural Network to classify the MNIST images.
+def example2():
+    from tensorflow.examples.tutorials.mnist import input_data
+    mnist = input_data.read_data_sets('MNIST_data/',one_hot=True)
+    X_train = mnist.train.images
+    # To reduce computational cost, we let the training size be 500.
+    X_train = X_train[:500,:]
+    
+    model = NNM.NeuralNetworkModel()
+    model.Build()
 if __name__ == '__main__':
-    example1()
+    example2()
