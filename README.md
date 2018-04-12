@@ -1,3 +1,9 @@
 ## Convolution-Neural-Network
-The Convolution neural network classifier is a subclass of Classifier in 'Classifier-and-Regressor'.
-So you should import the code before you use this class.
+This is a framework of Neural Network for myself.
+# Autoencoder example
+In example.py file, I demostrate autoencoder based on the MNIST dataset. We could
+see that as the number of iteration goes up, the loss would go down. Also the reconstruction
+would be clearer if the number of iteration is larger. The following graph is the loss and the
+MNIST original images versus the reconstructed ones.
+![](https://github.com/randysuen1991/Neural-Network/blob/master/figures/autoencoder_mnist_loss.png)
+![](https://github.com/randysuen1991/Neural-Network/blob/master/figures/autoencoder_mnist.png) 
