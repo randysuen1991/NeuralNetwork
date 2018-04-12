@@ -1,4 +1,4 @@
-## Convolution-Neural-Network
+## Neural Network
 This is a framework of Neural Network for myself.
 # Autoencoder example
 In example.py file, I demostrate autoencoder based on the MNIST dataset. We could

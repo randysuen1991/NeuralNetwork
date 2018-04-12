@@ -50,12 +50,13 @@ def example2():
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('MNIST_data/',one_hot=True)
     X_train = mnist.train.images
+    Y_train = mnist.train.labels
     # To reduce computational cost, we let the training size be 500.
     X_train = X_train[:500,:]
     
     model = NNM.NeuralNetworkModel()
     model.Build(NNU.ConvolutionUnit(shape=,transfer_fun=))
     model.Build(NNU.Flatten())
-    model.Fit()
+    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy)
 if __name__ == '__main__':
     example1()
