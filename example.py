@@ -1,6 +1,8 @@
 import NeuralNetworkModel as NNM
 import NeuralNetworkUnit as NNU
+import NeuralNetworkLoss as NNL
 import matplotlib.pyplot as plt
+
 
 # In this example, I download mnist dataset from tensorflow and implement autoencoder to the dataset.
 def example1():
@@ -15,7 +17,7 @@ def example1():
     model.Build(NNU.NeuronLayer(hidden_dim=256))
     model.Build(NNU.NeuronLayer(hidden_dim=128))
     model.Build(NNU.NeuronLayer(hidden_dim=784))
-    model.Fit(X_train,X_train,show_graph=True,num_steps=5000)
+    model.Fit(X_train,X_train,show_graph=True,num_steps=5000,loss_fun=NNL.NeuralNetworkLoss.MeanSqaured)
     
     
     n = 10  # how many digits we will display
@@ -54,4 +56,4 @@ def example2():
     model = NNM.NeuralNetworkModel()
     model.Build()
 if __name__ == '__main__':
-    example2()
+    example1()

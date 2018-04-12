@@ -51,7 +51,7 @@ class NeuralNetworkModel(C.Classifier):
         self.layers.append(layerunit)
         self.num_layers += 1    
         
-    def Fit(self,X_train,Y_train,num_steps=5000,loss_fun=NNL.NeuralNetworkLoss.MeanSqaured,
+    def Fit(self,X_train,Y_train,loss_fun,num_steps=5000,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
