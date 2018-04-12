@@ -5,29 +5,25 @@ if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' not in sys
 import Classifier as C
 import NeuralNetworkLoss as NNL
 import tensorflow as tf
-import numpy as np
 import matplotlib.pyplot as plt
 
 
 class NeuralNetworkModel(C.Classifier):
     
         
-    def __init__(self,**kwargs):
+    def __init__(self,dtype=tf.float64,**kwargs):
         super().__init__()
-        #[None,None,None,None]=[batch_size,length,width,rgb order]
-        self.input = tf.placeholder(dtype=tf.float32,shape=[None,None,None,None])
-        self.output = self.input
+        self.dtype = dtype
+        
+        
         #[None,None] = [batch_size,label]
-        self.target = tf.placeholder(dtype=tf.float32,shape=[None,None])
+        self.target = tf.placeholder(dtype=dtype,shape=[None,None])
         self.sess = tf.Session()
         self.parameters = dict()
         self.layers = list()
         # Presume the image_type being grayscales
         self.num_channels = kwargs.get('num_channels',1)
         self.num_layers = 0
-        
-        
-        
         
     # The following two functions connect all the layers.    
     def _Initialize(self,output_dim,recurrentunit):
@@ -44,7 +40,7 @@ class NeuralNetworkModel(C.Classifier):
         else :
             unit.Initialize()
         self.output = unit.output
-        input_dim = int(unit.output.shape[2])
+        input_dim = int(unit.output.shape[1])
         for unit in self.layers[1:] :
             input_dim = self._Initialize(input_dim,unit)
         
@@ -61,8 +57,13 @@ class NeuralNetworkModel(C.Classifier):
         self.batch_size = int(X_train.shape[0])
         # if the data are images, then the first layer should be some layers like convolution, pooling ....
         if len(X_train.shape) == 4 :
+            #[None,None,None,None]=[batch_size,length,width,rgb order]
+            self.input = tf.placeholder(dtype=self.dtype,shape=[None,None,None,None])
+            self.output = self.input
             self._Initialize_Variables(None)
         else:
+            self.input = tf.placeholder(dtype=self.dtype,shape=[None,None])
+            self.output = self.input
             self._Initialize_Variables(int(X_train.shape[1]))
         
         

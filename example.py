@@ -10,15 +10,16 @@ def example1():
     mnist = input_data.read_data_sets('MNIST_data/',one_hot=True)
     
     X_train = mnist.train.images
+    X_train = X_train[:50,:]
     X_test = mnist.test.images
     
     model = NNM.NeuralNetworkModel()
     model.Build(NNU.NeuronLayer(hidden_dim=100))
-    model.Build(NNU.NeuronLayer(hidden_dim=50))
+#    model.Build(NNU.NeuronLayer(hidden_dim=50))
     model.Build(NNU.NeuronLayer(hidden_dim=10))
-    model.Build(NNU.NeuronLayer(hidden_dim=50))
+#    model.Build(NNU.NeuronLayer(hidden_dim=50))
     model.Build(NNU.NeuronLayer(hidden_dim=100))
     model.Build(NNU.NeuronLayer(hidden_dim=784))
-    model.Fit(X_train,X_train)
+    model.Fit(X_train,X_train,show_graph=True)
 if __name__ == '__main__':
     example1()
