@@ -20,6 +20,9 @@ class NeuronLayer(NeuralNetworkUnit):
         self.output = tf.matmul(self.input,self.parameters['w']) + self.parameters['b']
         self.output = self.transfer_fun(self.output)
         
+class SoftMaxLayer(NeuralNetworkUnit):
+    def Initialize(self):
+        pass
 class ConvolutionUnit(NeuralNetworkUnit):
     def __init__(self,shape,transfer_fun,dtype=tf.float64,**kwargs):
         super().__init__(None,None,transfer_fun)

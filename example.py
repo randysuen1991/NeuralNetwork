@@ -54,6 +54,8 @@ def example2():
     X_train = X_train[:500,:]
     
     model = NNM.NeuralNetworkModel()
-    model.Build()
+    model.Build(NNU.ConvolutionUnit(shape=,transfer_fun=))
+    model.Build(NNU.Flatten())
+    model.Fit()
 if __name__ == '__main__':
     example1()
