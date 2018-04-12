@@ -1,5 +1,5 @@
 ## Neural Network
-This is a framework of Neural Network for myself.
+This is a framework of Neural Network for myself. This framework could implement ordinary neural network and convolution neural network.
 # Autoencoder example
 In example.py file, I demostrate autoencoder based on the MNIST dataset. We could
 see that as the number of iteration goes up, the loss would go down. Also the reconstruction
