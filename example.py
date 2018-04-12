@@ -8,10 +8,8 @@ def example1():
     mnist = input_data.read_data_sets('MNIST_data/',one_hot=True)
     
     X_train = mnist.train.images
-#    print(X_train.shape)
     X_train = X_train[:500,:]
-    X_test = mnist.test.images
-    X_test = X_test[:50,:]
+    
     model = NNM.NeuralNetworkModel()
     model.Build(NNU.NeuronLayer(hidden_dim=256))
     model.Build(NNU.NeuronLayer(hidden_dim=128))
@@ -19,10 +17,14 @@ def example1():
     model.Fit(X_train,X_train,show_graph=True,num_steps=5000)
     
     
+    n = 10  # how many digits we will display
+    X_test = mnist.test.images
+    X_test = X_test[:n,:]
+    
     results = model.Predict(X_test)
     
     # plot the testing images.
-    n = 10  # how many digits we will display
+    
     plt.figure(figsize=(20, 4))
     for i in range(n):
     #     display original
