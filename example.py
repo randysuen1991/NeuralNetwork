@@ -1,8 +1,5 @@
-import numpy as np
-import tensorflow as tf
 import NeuralNetworkModel as NNM
 import NeuralNetworkUnit as NNU
-import NeuralNetworkLoss as NNL
 import matplotlib.pyplot as plt
 
 # In this example, I download mnist dataset from tensorflow and implement autoencoder to the dataset.
