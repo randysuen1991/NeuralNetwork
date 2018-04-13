@@ -22,16 +22,20 @@ class NeuronLayer(NeuralNetworkUnit):
         
 class SoftMaxLayer(NeuralNetworkUnit):
     def Initialize(self):
-        pass
+        sum_exp = tf.reduce_sum(tf.exp(self.input))
+        self.output = tf.exp(self.input) / sum_exp
+        
 class ConvolutionUnit(NeuralNetworkUnit):
+    # The shape parameter should be [height, width, num filters]
     def __init__(self,shape,transfer_fun,dtype=tf.float64,**kwargs):
         super().__init__(None,None,transfer_fun)
         self.dtype = dtype
         self.shape = shape
         self.kwargs = kwargs
-    def Initialize(self):
+    def Initialize(self,num_channels):
+        self.shape.insert(2,num_channels)
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=self.shape,mean=0,stddev=0.1))
-        self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=self.shape[-1],mean=0,stddev=0.1))
+        self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(self.shape[-1],),mean=0,stddev=0.1))
         self.output = tf.nn.conv2d(self.output,self.parameters['w'],strides = self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
         self.output = self.tranfer_fun(self.output)
         

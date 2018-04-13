@@ -57,6 +57,15 @@ def example2():
     model = NNM.NeuralNetworkModel()
     model.Build(NNU.ConvolutionUnit(shape=,transfer_fun=))
     model.Build(NNU.Flatten())
+    model.Build(NNU.SoftMaxLayer())
     model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy)
+    
+def example3():
+    class tc():
+        pass
+    a = tc()
+    a.yy = 5
+    print(a.yy)
+    
 if __name__ == '__main__':
-    example1()
+    example3()
