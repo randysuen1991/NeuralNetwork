@@ -30,19 +30,21 @@ class NeuralNetworkModel(C.Classifier):
         recurrentunit.input = self.output
         recurrentunit.Initialize(output_dim)
         self.output = recurrentunit.output
-        return int(self.output.shape[1])
+        if len(recurrentunit.output.shape) == 4:
+            return int(self.output.shape[3])
+        else :
+            return int(self.output.shape[1])
     
     def _Initialize_Variables(self,input_dim):
         
         unit = self.layers[0]
         unit.input = self.input
-        if input_dim != None:
-            unit.Initialize(input_dim)
-        else :
-            unit.Initialize()
+        unit.Initialize(input_dim)
         self.output = unit.output
-        
-        input_dim = int(unit.output.shape[1])
+        if len(unit.output.shape) == 4:
+            input_dim = int(unit.output.shape[3])
+        else:
+            input_dim = int(unit.output.shape[1])
         for unit in self.layers[1:] :
             input_dim = self._Initialize(input_dim,unit)
         
@@ -59,10 +61,11 @@ class NeuralNetworkModel(C.Classifier):
         self.batch_size = int(X_train.shape[0])
         # if the data are images, then the first layer should be some layers like convolution, pooling ....
         if len(X_train.shape) == 4 :
-            #[None,None,None,None]=[batch_size,length,width,rgb order]
+            #[None,None,None,None]=[batch_size,length,width,num channels]
             self.input = tf.placeholder(dtype=self.dtype,shape=[None,None,None,None])
             self.output = self.input
-            self._Initialize_Variables(None)
+            # Initialize the convolution with the num of channels.
+            self._Initialize_Variables(X_train.shape[3])
         else:
             self.input = tf.placeholder(dtype=self.dtype,shape=[None,None])
             self.output = self.input

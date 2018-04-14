@@ -1,9 +1,13 @@
+import sys
+if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Dimension-Reduction-Approaches' not in sys.path:
+    sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Dimension-Reduction-Approaches')
 import NeuralNetworkModel as NNM
 import NeuralNetworkUnit as NNU
 import NeuralNetworkLoss as NNL
 import matplotlib.pyplot as plt
-
-
+import UtilFun as UF
+import tensorflow as tf
+import matplotlib.pyplot as plt
 # In this example, I download mnist dataset from tensorflow and implement autoencoder to the dataset.
 def example1():
     from tensorflow.examples.tutorials.mnist import input_data
@@ -50,22 +54,18 @@ def example2():
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('MNIST_data/',one_hot=True)
     X_train = mnist.train.images
-    Y_train = mnist.train.labels
     # To reduce computational cost, we let the training size be 500.
     X_train = X_train[:500,:]
+    Y_train = mnist.train.labels
+    Y_train = Y_train[:500,:]
+    X_train = UF.vectors2imgs(X_train,(None,28,28,1))[:,:,:,0]
     
-    model = NNM.NeuralNetworkModel()
-    model.Build(NNU.ConvolutionUnit(shape=,transfer_fun=))
+    model = NNM.NeuralNetworkModel(dtype=tf.float32)
+    model.Build(NNU.ConvolutionUnit(shape=(5,5,3),transfer_fun=tf.sigmoid))
     model.Build(NNU.Flatten())
     model.Build(NNU.SoftMaxLayer())
     model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy)
-    
-def example3():
-    class tc():
-        pass
-    a = tc()
-    a.yy = 5
-    print(a.yy)
+
     
 if __name__ == '__main__':
-    example3()
+    example2()
