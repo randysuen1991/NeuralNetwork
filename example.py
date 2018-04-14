@@ -58,10 +58,10 @@ def example2():
     X_train = X_train[:500,:]
     Y_train = mnist.train.labels
     Y_train = Y_train[:500,:]
-    X_train = UF.vectors2imgs(X_train,(None,28,28,1))[:,:,:,0]
+    X_train = UF.vectors2imgs(X_train,(None,28,28,1))
     
     model = NNM.NeuralNetworkModel(dtype=tf.float32)
-    model.Build(NNU.ConvolutionUnit(shape=(5,5,3),transfer_fun=tf.sigmoid))
+    model.Build(NNU.ConvolutionUnit(dtype=tf.float32,shape=(5,5,3),transfer_fun=tf.sigmoid))
     model.Build(NNU.Flatten())
     model.Build(NNU.SoftMaxLayer())
     model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy)

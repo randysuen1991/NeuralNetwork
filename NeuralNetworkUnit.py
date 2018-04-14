@@ -21,7 +21,7 @@ class NeuronLayer(NeuralNetworkUnit):
         self.output = self.transfer_fun(self.output)
         
 class SoftMaxLayer():
-    def Initialize(self):
+    def Initialize(self,*args):
         sum_exp = tf.reduce_sum(tf.exp(self.input))
         self.output = tf.exp(self.input) / sum_exp
         
@@ -39,11 +39,12 @@ class ConvolutionUnit(NeuralNetworkUnit):
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=shape,mean=0,stddev=0.1))
         self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(shape[-1],),mean=0,stddev=0.1))
         self.output = tf.nn.conv2d(self.input,self.parameters['w'],strides = self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
-        self.output = self.tranfer_fun(self.output)
+        self.output = self.transfer_fun(self.output)
         
 class Flatten():
-    def Initialize(self):
-        self.output = tf.reshape(self.input,shape=[-1,int(np.prod(self.output.__dict__['_shape'][1:]))])
+    def Initialize(self,*args):
+        print(self.input.__dict__['_shape'][1:])
+        self.output = tf.reshape(self.input,shape=[-1,int(np.prod(self.input.__dict__['_shape'][1:]))])
 
 class AvgPooling(NeuralNetworkUnit):
     def Initialize(self,output):
