@@ -12,7 +12,7 @@ class NeuralNetworkUnit():
         
 class NeuronLayer(NeuralNetworkUnit):
     def __init__(self,hidden_dim,input_dim=None,transfer_fun=tf.sigmoid,dtype=tf.float64):
-        super().__init__(hidden_dim,input_dim,transfer_fun)
+        super().__init__(hidden_dim,input_dim,transfer_fun,dtype=dtype)
     def Initialize(self,input_dim):
         self.input_dim = input_dim
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(self.input_dim,self.hidden_dim),mean=0,stddev=0.1))
@@ -36,13 +36,13 @@ class ConvolutionUnit(NeuralNetworkUnit):
         shape = list(self.shape)
         shape.insert(2,num_channels)
         shape = tuple(shape)
-        print(shape)
+        
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=shape,mean=0,stddev=0.1))
         self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(shape[-1],),mean=0,stddev=0.1))
         self.output = tf.nn.conv2d(self.input,self.parameters['w'],strides = self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
         self.output = self.output + self.parameters['b']
         self.output = self.transfer_fun(self.output)
-        print(self.output.shape)
+        
         
         
 class ResidualBlocl(NeuralNetworkUnit):
@@ -50,14 +50,17 @@ class ResidualBlocl(NeuralNetworkUnit):
 
 class Flatten():
     def Initialize(self,*args):
-        print(self.input.__dict__['_shape'][1:])
         self.output = tf.reshape(self.input,shape=[-1,int(np.prod(self.input.__dict__['_shape'][1:]))])
 
 class AvgPooling(NeuralNetworkUnit):
+    def __init__(self,ksize,num_channels,**kwargs):
+        self.ksize=ksize
+        self.num_channels = num_channels
+        self.kwargs = kwargs
     def Initialize(self,output):
-        ksize = [1] + ksize
+        ksize = [1] + self.ksize
         ksize += [self.num_channels]
-        self.output = tf.nn.avg_pool(value=self.outpt,ksize=ksize,strides=kwargs.get('strides',[1,1,1,1]),padding=kwargs.get('padding','SAME'))
+        self.output = tf.nn.avg_pool(value=self.outpt,ksize=ksize,strides=self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
     
    
 class MaxPooling(NeuralNetworkUnit):

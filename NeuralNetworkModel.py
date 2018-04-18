@@ -14,8 +14,6 @@ class NeuralNetworkModel(C.Classifier):
     def __init__(self,dtype=tf.float64,**kwargs):
         super().__init__()
         self.dtype = dtype
-        
-        
         #[None,None] = [batch_size,label]
         self.target = tf.placeholder(dtype=dtype,shape=[None,None])
         self.sess = tf.Session()
@@ -24,10 +22,10 @@ class NeuralNetworkModel(C.Classifier):
         # Presume the image_type being grayscales
         self.num_channels = kwargs.get('num_channels',1)
         self.num_layers = 0
+        self.kwargs = kwargs
         
     # The following two functions connect all the layers.    
     def _Initialize(self,output_dim,recurrentunit):
-        print(self.output)
         recurrentunit.input = self.output
         recurrentunit.Initialize(output_dim)
         self.output = recurrentunit.output
@@ -37,18 +35,15 @@ class NeuralNetworkModel(C.Classifier):
             return int(self.output.shape[1])
     
     def _Initialize_Variables(self,input_dim):
-        
-        unit = self.layers[0]
+        unit = self.layers[0] 
         unit.input = self.input
         unit.Initialize(input_dim)
         self.output = unit.output
-        print(self.output)
         if len(unit.output.shape) == 4:
             input_dim = int(unit.output.shape[3])
         else:
             input_dim = int(unit.output.shape[1])
         for unit in self.layers[1:] :
-            print(unit)
             input_dim = self._Initialize(input_dim,unit)
         
         
@@ -65,11 +60,13 @@ class NeuralNetworkModel(C.Classifier):
         # if the data are images, then the first layer should be some layers like convolution, pooling ....
         
         if len(X_train.shape) == 4 :
+            
+            img_size = self.kwargs.get('img_size')
             #[None,None,None,None]=[batch_size,length,width,num channels]
-            self.input = tf.placeholder(dtype=self.dtype,shape=[None,None,None,None])
+            self.input = tf.placeholder(dtype=self.dtype,shape=[None,img_size,img_size,X_train.shape[3]])
             self.output = self.input
             # Initialize the convolution with the num of channels.
-            self._Initialize_Variables(X_train.shape[3])
+            self._Initialize_Variables(int(X_train.shape[3]))
         else:
             self.input = tf.placeholder(dtype=self.dtype,shape=[None,None])
             self.output = self.input
