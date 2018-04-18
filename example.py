@@ -21,8 +21,10 @@ def example1():
     model.Build(NNU.NeuronLayer(hidden_dim=256))
     model.Build(NNU.NeuronLayer(hidden_dim=128))
     model.Build(NNU.NeuronLayer(hidden_dim=784))
-    model.Fit(X_train,X_train,show_graph=True,num_steps=5000,loss_fun=NNL.NeuralNetworkLoss.MeanSqaured)
-    
+    import time
+    t1 = time.time()
+    model.Fit(X_train,X_train,show_graph=True,num_epochs=500,mini_size=40,loss_fun=NNL.NeuralNetworkLoss.MeanSqaured)
+    print(time.time()-t1)
     
     n = 10  # how many digits we will display
     X_test = mnist.test.images
@@ -65,8 +67,11 @@ def example2():
     model.Build(NNU.Flatten())
     model.Build(NNU.NeuronLayer(hidden_dim=10,dtype=tf.float32))
     model.Build(NNU.SoftMaxLayer())
-    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True)
+    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True,num_epochs=5000)
 
-    
+    X_test = mnist.test.images
+    X_test = X_test[0:5,:]
+    X_test = UF.vectors2imgs(X_test,(None,28,28,1))
+    print(model.Predict(X_test))
 if __name__ == '__main__':
     example2()

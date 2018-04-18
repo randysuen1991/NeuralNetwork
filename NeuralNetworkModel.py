@@ -3,11 +3,10 @@ import sys
 if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' not in sys.path :
     sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor')
 import Classifier as C
-import NeuralNetworkLoss as NNL
 import tensorflow as tf
 import matplotlib.pyplot as plt
-
-
+import numpy as np
+import random
 class NeuralNetworkModel(C.Classifier):
     
         
@@ -51,7 +50,7 @@ class NeuralNetworkModel(C.Classifier):
         self.layers.append(layerunit)
         self.num_layers += 1    
         
-    def Fit(self,X_train,Y_train,loss_fun,num_steps=5000,
+    def Fit(self,X_train,Y_train,loss_fun,num_epochs=5000,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
@@ -72,17 +71,30 @@ class NeuralNetworkModel(C.Classifier):
             self.output = self.input
             self._Initialize_Variables(int(X_train.shape[1]))
         
-        
-        loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.batch_size)
+        mini_size = kwargs.get('mini_size',X_train.shape[0])
+        loss = self.loss_fun(output=self.output,target=self.target,batch_size=mini_size)
         self.sess.run(tf.global_variables_initializer())
         grads_and_vars = self.optimizer.compute_gradients(loss)
         train = self.optimizer.apply_gradients(grads_and_vars)
         train_losses = list()
         
-        for i in range(num_steps):
-            _, train_loss = self.sess.run(fetches=[train,loss],feed_dict={self.input:X_train,self.target:Y_train})
-            train_losses.append(train_loss)
-
+        for i in range(num_epochs):
+            training = list(zip(X_train,Y_train))
+            random.shuffle(training)
+            
+            #If batch size = 1, then the training process is equal to stochastic gradient decent. If it is equal to the number of the training set, 
+            # then it is equal to the batch gradient decent(classic gradient descent). Otherwise, it is equal to mini-batch gradient descent.
+            
+            num_batch = X_train.shape[0]//mini_size
+            loss_list = []
+            for partition in np.array_split(training,num_batch):
+                partition = list(zip(*partition))
+                X_train_partition = np.array(partition[0])
+                Y_train_partition = np.array(partition[1])
+                _, train_loss = self.sess.run(fetches=[train,loss],feed_dict={self.input:X_train_partition,self.target:Y_train_partition})
+                loss_list.append(train_loss)
+                
+            train_losses.append(np.mean(loss_list))
             if show_graph :
 #           Display an update every 50 iterations
                 if i % 50 == 0:
@@ -97,4 +109,23 @@ class NeuralNetworkModel(C.Classifier):
     
     def Predict(self,X_test):
         results = self.sess.run(fetches=self.output,feed_dict={self.input:X_test})
-        return results        
+        return results      
+    
+    
+    
+def example():
+    import random
+    a = [(1,2),(3,4),(5,6)]
+    a = [(1,2,3,4,5,6),(5,6,7,8,9,0)]
+#    b = np.random.shuffle(a)
+#    random.shuffle(a)
+#    print(a)
+    b = list(zip(*a))
+    a = list(zip(*b))
+    print(b)
+    print(a)
+    for ob in b:
+        pass
+
+if __name__ == '__main__' :
+    example()
