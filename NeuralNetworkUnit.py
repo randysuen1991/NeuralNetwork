@@ -36,11 +36,18 @@ class ConvolutionUnit(NeuralNetworkUnit):
         shape = list(self.shape)
         shape.insert(2,num_channels)
         shape = tuple(shape)
+        print(shape)
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=shape,mean=0,stddev=0.1))
         self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(shape[-1],),mean=0,stddev=0.1))
         self.output = tf.nn.conv2d(self.input,self.parameters['w'],strides = self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
+        self.output = self.output + self.parameters['b']
         self.output = self.transfer_fun(self.output)
+        print(self.output.shape)
         
+        
+class ResidualBlocl(NeuralNetworkUnit):
+    pass
+
 class Flatten():
     def Initialize(self,*args):
         print(self.input.__dict__['_shape'][1:])

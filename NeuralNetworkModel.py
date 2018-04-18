@@ -27,6 +27,7 @@ class NeuralNetworkModel(C.Classifier):
         
     # The following two functions connect all the layers.    
     def _Initialize(self,output_dim,recurrentunit):
+        print(self.output)
         recurrentunit.input = self.output
         recurrentunit.Initialize(output_dim)
         self.output = recurrentunit.output
@@ -41,6 +42,7 @@ class NeuralNetworkModel(C.Classifier):
         unit.input = self.input
         unit.Initialize(input_dim)
         self.output = unit.output
+        print(self.output)
         if len(unit.output.shape) == 4:
             input_dim = int(unit.output.shape[3])
         else:
@@ -61,7 +63,7 @@ class NeuralNetworkModel(C.Classifier):
         
         self.batch_size = int(X_train.shape[0])
         # if the data are images, then the first layer should be some layers like convolution, pooling ....
-        print(X_train.shape)
+        
         if len(X_train.shape) == 4 :
             #[None,None,None,None]=[batch_size,length,width,num channels]
             self.input = tf.placeholder(dtype=self.dtype,shape=[None,None,None,None])
