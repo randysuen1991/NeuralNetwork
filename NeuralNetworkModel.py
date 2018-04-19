@@ -109,7 +109,7 @@ class NeuralNetworkModel(C.Classifier):
     
     def Predict(self,X_test):
         results = self.sess.run(fetches=self.output,feed_dict={self.input:X_test})
-        return results      
+        return results
     
     
     

@@ -22,8 +22,9 @@ class NeuronLayer(NeuralNetworkUnit):
         
 class SoftMaxLayer():
     def Initialize(self,*args):
-        sum_exp = tf.reduce_sum(tf.exp(self.input))
-        self.output = tf.exp(self.input) / sum_exp
+        sum_exp = tf.reduce_sum(tf.exp(self.input),axis=1)
+        sum_exp = tf.expand_dims(sum_exp,axis=1)
+        self.output = tf.divide(tf.exp(self.input),sum_exp)
         
 class ConvolutionUnit(NeuralNetworkUnit):
     # The shape parameter should be (height, width, num filters)
@@ -72,3 +73,13 @@ class MaxPooling(NeuralNetworkUnit):
 class Dropout(NeuralNetworkUnit):
     def Dropout(self,keep_prob):
         self.output = tf.nn.dropout(self.output,keep_prob=keep_prob)
+        
+        
+if __name__ == '__main__':
+    sm = SoftMaxLayer()
+    data = np.array([1,2,3,4,5,6,7,8,9,10])
+    sm.input = tf.placeholder(dtype=tf.float32,shape=(10,))
+    sm.Initialize(None)
+    with tf.Session() as sess:
+        result = sess.run(sm.output,feed_dict={sm.input:data})
+        print(np.sum(result))

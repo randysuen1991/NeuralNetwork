@@ -55,23 +55,28 @@ def example1():
 def example2():
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('MNIST_data/',one_hot=True)
-    X_train = mnist.train.images
-    # To reduce computational cost, we let the training size be 500.
-    X_train = X_train[:500,:]
-    Y_train = mnist.train.labels
-    Y_train = Y_train[:500,:]
-    X_train = UF.vectors2imgs(X_train,(None,28,28,1))
-    model = NNM.NeuralNetworkModel(dtype=tf.float32,img_size=28)
-    #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
-    model.Build(NNU.ConvolutionUnit(dtype=tf.float32,shape=(5,5,3),transfer_fun=tf.sigmoid))
-    model.Build(NNU.Flatten())
-    model.Build(NNU.NeuronLayer(hidden_dim=10,dtype=tf.float32))
-    model.Build(NNU.SoftMaxLayer())
-    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True,num_epochs=5000)
+#    X_train = mnist.train.images
+#    # To reduce computational cost, we let the training size be 500.
+#    X_train = X_train[:500,:]
+#    Y_train = mnist.train.labels
+#    Y_train = Y_train[:500,:]
+#    X_train = UF.vectors2imgs(X_train,(None,28,28,1))
+#    model = NNM.NeuralNetworkModel(dtype=tf.float32,img_size=28)
+#    #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
+#    model.Build(NNU.ConvolutionUnit(dtype=tf.float32,shape=(5,5,3),transfer_fun=tf.sigmoid))
+#    model.Build(NNU.Flatten())
+#    model.Build(NNU.NeuronLayer(hidden_dim=10,dtype=tf.float32))
+#    model.Build(NNU.SoftMaxLayer())
+#    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True,num_epochs=1000)
 
     X_test = mnist.test.images
-    X_test = X_test[0:5,:]
+    X_test = X_test[0:10,:]
     X_test = UF.vectors2imgs(X_test,(None,28,28,1))
-    print(model.Predict(X_test))
+    plt.imshow(X_test[0,:,:,0])
+#    plt.imshow(X_test[1,:,:,0])
+#    plt.imshow(X_test[2,:,:,0])
+    import numpy as np
+#    print(np.sum(model.Predict(X_test)))
+#    print(np.argmax(model.Predict(X_test),axis=1))
 if __name__ == '__main__':
     example2()
