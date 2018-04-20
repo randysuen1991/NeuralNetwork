@@ -75,9 +75,13 @@ class MaxPooling(NeuralNetworkUnit):
         self.output = tf.nn.avg_pool(value=self.input,ksize=self.shape,strides=self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
     
 class Dropout(NeuralNetworkUnit):
-    def Dropout(self,keep_prob):
-        self.output = tf.nn.dropout(self.output,keep_prob=keep_prob)
-        
+    def __init__(self,keep_prob,transfer_fun=None,dtype=tf.float64,**kwargs):
+        super().__init__(None,None,transfer_fun)
+        self.dtype = dtype
+        self.kwargs = kwargs
+        self.keep_prob = keep_prob
+    def Initialize(self,*args):
+        self.output = tf.nn.dropout(self.input,keep_prob=self.keep_prob)
         
 if __name__ == '__main__':
     sm = SoftMaxLayer()

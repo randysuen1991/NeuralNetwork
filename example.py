@@ -65,10 +65,11 @@ def example2():
     #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
     model.Build(NNU.ConvolutionUnit(dtype=tf.float32,shape=(5,5,3),transfer_fun=tf.tanh))
     model.Build(NNU.AvgPooling(dtype=tf.float32,shape=(1,4,4,1)))
+    model.Build(NNU.Dropout(keep_prob=0.5))
     model.Build(NNU.Flatten())
     model.Build(NNU.NeuronLayer(hidden_dim=10,dtype=tf.float32))
     model.Build(NNU.SoftMaxLayer())
-    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True,num_epochs=5000)
+    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True,num_epochs=1000)
 
     X_test = mnist.test.images
     Y_test = mnist.test.labels
