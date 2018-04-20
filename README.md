@@ -9,6 +9,5 @@ MNIST original images versus the reconstructed ones.
 ![](https://github.com/randysuen1991/Neural-Network/blob/master/figures/autoencoder_mnist.png) 
 
 # Classification example
-In example.py file, I use convolution neural network to classify MNIST dataset in example2.
+In example.py file, I use convolution neural network to classify MNIST dataset in example2.In this example, our classification accuracy is 0.85, in which we classify 20 testing images.<br>
 ![](https://github.com/randysuen1991/Neural-Network/blob/master/figures/convolution_mnist_loss.png)
-In this example, our classification accuracy is 0.85, in which we classify 20 testing images.
