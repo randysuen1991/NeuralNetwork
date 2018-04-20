@@ -83,11 +83,3 @@ class Dropout(NeuralNetworkUnit):
     def Initialize(self,*args):
         self.output = tf.nn.dropout(self.input,keep_prob=self.keep_prob)
         
-if __name__ == '__main__':
-    sm = SoftMaxLayer()
-    data = np.array([1,2,3,4,5,6,7,8,9,10])
-    sm.input = tf.placeholder(dtype=tf.float32,shape=(10,))
-    sm.Initialize(None)
-    with tf.Session() as sess:
-        result = sess.run(sm.output,feed_dict={sm.input:data})
-        print(np.sum(result))
