@@ -111,6 +111,20 @@ class NeuralNetworkModel(C.Classifier):
         results = self.sess.run(fetches=self.output,feed_dict={self.input:X_test})
         return results
     
+    # This is a function for evaluating the accuracy of the classifier.
+    def Evaluate(self,X_test,Y_test):
+        predictions = self.Predict(X_test)
+        predictions = np.argmax(predictions,axis=1)
+        count = 0
+        results = []
+        for iteration, prediction in enumerate(predictions):
+            if Y_test[iteration,prediction] == 1 :
+                count += 1
+                results.append(True)
+            else:
+                results.append(False)
+            
+        return count/X_test.shape[0], results
     
     
 def example():

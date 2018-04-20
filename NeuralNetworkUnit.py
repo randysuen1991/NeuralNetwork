@@ -28,7 +28,7 @@ class SoftMaxLayer():
         
 class ConvolutionUnit(NeuralNetworkUnit):
     # The shape parameter should be (height, width, num filters)
-    def __init__(self,shape,transfer_fun,dtype=tf.float64,**kwargs):
+    def __init__(self,shape,transfer_fun=None,dtype=tf.float64,**kwargs):
         super().__init__(None,None,transfer_fun)
         self.dtype = dtype
         self.shape = shape
@@ -42,8 +42,8 @@ class ConvolutionUnit(NeuralNetworkUnit):
         self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(shape[-1],),mean=0,stddev=0.1))
         self.output = tf.nn.conv2d(self.input,self.parameters['w'],strides = self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
         self.output = self.output + self.parameters['b']
-        self.output = self.transfer_fun(self.output)
-        
+        if self.transfer_fun != None:
+            self.output = self.transfer_fun(self.output)
         
         
 class ResidualBlocl(NeuralNetworkUnit):
@@ -54,21 +54,25 @@ class Flatten():
         self.output = tf.reshape(self.input,shape=[-1,int(np.prod(self.input.__dict__['_shape'][1:]))])
 
 class AvgPooling(NeuralNetworkUnit):
-    def __init__(self,ksize,num_channels,**kwargs):
-        self.ksize=ksize
-        self.num_channels = num_channels
+    # The shape is corresponding to each dimension of the input data. 
+    def __init__(self,shape,transfer_fun=None,dtype=tf.float64,**kwargs):
+        super().__init__(None,None,transfer_fun)
+        self.dtype = dtype
+        self.shape = shape
         self.kwargs = kwargs
-    def Initialize(self,output):
-        ksize = [1] + self.ksize
-        ksize += [self.num_channels]
-        self.output = tf.nn.avg_pool(value=self.outpt,ksize=ksize,strides=self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
+    def Initialize(self,*args):
+        self.output = tf.nn.avg_pool(value=self.input,ksize=self.shape,strides=self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
     
    
 class MaxPooling(NeuralNetworkUnit):
-    def Initialize(self,output):
-        ksize = [1] + ksize
-        ksize += [self.num_channels]
-        self.output = tf.nn.max_pool(value=self.outpt,ksize=ksize,strides=kwargs.get('strides',[1,1,1,1]),padding=kwargs.get('padding','SAME'))
+    # The shape is corresponding to each dimension of the input data. 
+    def __init__(self,shape,transfer_fun=None,dtype=tf.float64,**kwargs):
+        super().__init__(None,None,transfer_fun)
+        self.dtype = dtype
+        self.shape = shape
+        self.kwargs = kwargs
+    def Initialize(self,*args):
+        self.output = tf.nn.avg_pool(value=self.input,ksize=self.shape,strides=self.kwargs.get('strides',[1,1,1,1]),padding=self.kwargs.get('padding','SAME'))
     
 class Dropout(NeuralNetworkUnit):
     def Dropout(self,keep_prob):
