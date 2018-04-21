@@ -61,7 +61,7 @@ def example2():
     Y_train = mnist.train.labels
     Y_train = Y_train[:500,:]
     X_train = UF.vectors2imgs(X_train,(None,28,28,1))
-    model = NNM.NeuralNetworkModel(dtype=tf.float32,img_size=28)
+    model = NNM.NeuralNetworkModel(dtype=tf.float32,img_size=(28,28))
     #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
     model.Build(NNU.ConvolutionUnit(dtype=tf.float32,shape=(5,5,3),transfer_fun=tf.tanh))
     model.Build(NNU.AvgPooling(dtype=tf.float32,shape=(1,4,4,1)))
@@ -76,9 +76,23 @@ def example2():
     X_test = X_test[0:20,:]
     Y_test = Y_test[0:20,:]
     X_test = UF.vectors2imgs(X_test,(None,28,28,1))
-    
-    
     print(model.Evaluate(X_test,Y_test))
-    
+
+def example3():
+    import numpy as np
+    imgs, labels, shape = np.load('ORL.npy')
+    X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs,labels,2)
+    model = NNM.NeuralNetworkModel(dtype=tf.float32,img_size=(112,92))
+    #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
+    model.Build(NNU.ConvolutionUnit(dtype=tf.float32,shape=(5,5,3),transfer_fun=tf.tanh))
+    model.Build(NNU.AvgPooling(dtype=tf.float32,shape=(1,4,4,1)))
+    model.Build(NNU.Dropout(keep_prob=0.5))
+    model.Build(NNU.Flatten())
+    model.Build(NNU.NeuronLayer(hidden_dim=10,dtype=tf.float32))
+    model.Build(NNU.SoftMaxLayer())
+    model.Fit(X_train,Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy,show_graph=True,num_epochs=500)
+    print(model.Evaluate(X_test,Y_test))
+#    print(model.sess.run(model.layers[0].parameters['w'][:,:,0,0]))
+#    print(model.layers[0].parameters['w'].shape)
 if __name__ == '__main__':
-    example2()
+    example3()

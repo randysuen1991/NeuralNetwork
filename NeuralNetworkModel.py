@@ -16,7 +16,6 @@ class NeuralNetworkModel(C.Classifier):
         #[None,None] = [batch_size,label]
         self.target = tf.placeholder(dtype=dtype,shape=[None,None])
         self.sess = tf.Session()
-        self.parameters = dict()
         self.layers = list()
         # Presume the image_type being grayscales
         self.num_channels = kwargs.get('num_channels',1)
@@ -62,7 +61,7 @@ class NeuralNetworkModel(C.Classifier):
             
             img_size = self.kwargs.get('img_size')
             #[None,None,None,None]=[batch_size,length,width,num channels]
-            self.input = tf.placeholder(dtype=self.dtype,shape=[None,img_size,img_size,X_train.shape[3]])
+            self.input = tf.placeholder(dtype=self.dtype,shape=[None,img_size[0],img_size[1],X_train.shape[3]])
             self.output = self.input
             # Initialize the convolution with the num of channels.
             self._Initialize_Variables(int(X_train.shape[3]))
@@ -114,7 +113,9 @@ class NeuralNetworkModel(C.Classifier):
     # This is a function for evaluating the accuracy of the classifier.
     def Evaluate(self,X_test,Y_test):
         predictions = self.Predict(X_test)
+        print(predictions)
         predictions = np.argmax(predictions,axis=1)
+        print(predictions)
         count = 0
         results = []
         for iteration, prediction in enumerate(predictions):
