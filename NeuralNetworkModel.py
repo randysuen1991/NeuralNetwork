@@ -128,19 +128,3 @@ class NeuralNetworkModel(C.Classifier):
         return count/X_test.shape[0], results
     
     
-def example():
-    import random
-    a = [(1,2),(3,4),(5,6)]
-    a = [(1,2,3,4,5,6),(5,6,7,8,9,0)]
-#    b = np.random.shuffle(a)
-#    random.shuffle(a)
-#    print(a)
-    b = list(zip(*a))
-    a = list(zip(*b))
-    print(b)
-    print(a)
-    for ob in b:
-        pass
-
-if __name__ == '__main__' :
-    example()
