@@ -113,18 +113,16 @@ class NeuralNetworkModel(C.Classifier):
     # This is a function for evaluating the accuracy of the classifier.
     def Evaluate(self,X_test,Y_test):
         predictions = self.Predict(X_test)
-        print(predictions)
         predictions = np.argmax(predictions,axis=1)
-        print(predictions)
         count = 0
-        results = []
+        correct_results = []
         for iteration, prediction in enumerate(predictions):
             if Y_test[iteration,prediction] == 1 :
                 count += 1
-                results.append(True)
+                correct_results.append(True)
             else:
-                results.append(False)
+                correct_results.append(False)
             
-        return count/X_test.shape[0], results
+        return count/X_test.shape[0], predictions, correct_results
     
     
