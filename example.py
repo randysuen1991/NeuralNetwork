@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import UtilFun as UF
 import tensorflow as tf
 import matplotlib.pyplot as plt
+
 # In this example, I download mnist dataset from tensorflow and implement autoencoder to the dataset.
 def example1():
     from tensorflow.examples.tutorials.mnist import input_data

@@ -49,8 +49,8 @@ class NeuralNetworkModel(C.Classifier):
         self.layers.append(layerunit)
         self.num_layers += 1    
         
-    def Fit(self,X_train,Y_train,loss_fun,num_epochs=5000,
-            optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
+            
+    def Compile(self,X_train,kwargs,optimizer=None,loss_fun=None,loss_and_optimize=True):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
         
@@ -65,16 +65,28 @@ class NeuralNetworkModel(C.Classifier):
             self.output = self.input
             # Initialize the convolution with the num of channels.
             self._Initialize_Variables(int(X_train.shape[3]))
-        else:
+        else :
             self.input = tf.placeholder(dtype=self.dtype,shape=[None,None])
             self.output = self.input
             self._Initialize_Variables(int(X_train.shape[1]))
         
-        mini_size = kwargs.get('mini_size',X_train.shape[0])
-        loss = self.loss_fun(output=self.output,target=self.target,batch_size=mini_size)
+        if not loss_and_optimize :
+            return 
+        
+        self.mini_size = kwargs.get('mini_size',X_train.shape[0])
+        self.loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.mini_size)
         self.sess.run(tf.global_variables_initializer())
-        grads_and_vars = self.optimizer.compute_gradients(loss)
-        train = self.optimizer.apply_gradients(grads_and_vars)
+        grads_and_vars = self.optimizer.compute_gradients(self.loss)
+        self.train = self.optimizer.apply_gradients(grads_and_vars)
+        
+        
+        
+        
+    def Fit(self,X_train,Y_train,loss_fun,num_epochs=5000,
+            optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
+        
+        
+        self.Compile(X_train=X_train,optimizer=optimizer,loss_fun=loss_fun,kwargs=kwargs)
         train_losses = list()
         
         for i in range(num_epochs):
@@ -84,13 +96,13 @@ class NeuralNetworkModel(C.Classifier):
             #If batch size = 1, then the training process is equal to stochastic gradient decent. If it is equal to the number of the training set, 
             # then it is equal to the batch gradient decent(classic gradient descent). Otherwise, it is equal to mini-batch gradient descent.
             
-            num_batch = X_train.shape[0]//mini_size
+            num_batch = X_train.shape[0] // self.mini_size
             loss_list = []
             for partition in np.array_split(training,num_batch):
                 partition = list(zip(*partition))
                 X_train_partition = np.array(partition[0])
                 Y_train_partition = np.array(partition[1])
-                _, train_loss = self.sess.run(fetches=[train,loss],feed_dict={self.input:X_train_partition,self.target:Y_train_partition})
+                _, train_loss = self.sess.run(fetches=[self.train,self.loss],feed_dict={self.input:X_train_partition,self.target:Y_train_partition})
                 loss_list.append(train_loss)
                 
             train_losses.append(np.mean(loss_list))
