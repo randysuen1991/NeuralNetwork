@@ -50,30 +50,30 @@ class NeuralNetworkModel(C.Classifier):
         self.num_layers += 1    
         
             
-    def Compile(self,X_train,kwargs,optimizer=None,loss_fun=None,loss_and_optimize=True):
+    def Compile(self,X_train_shape,kwargs,optimizer=None,loss_fun=None,loss_and_optimize=True):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
         
-        self.batch_size = int(X_train.shape[0])
+        self.batch_size = int(X_train_shape[0])
         # if the data are images, then the first layer should be some layers like convolution, pooling ....
         
-        if len(X_train.shape) == 4 :
+        if len(X_train_shape) == 4 :
             
             img_size = self.kwargs.get('img_size')
             #[None,None,None,None]=[batch_size,length,width,num channels]
-            self.input = tf.placeholder(dtype=self.dtype,shape=[None,img_size[0],img_size[1],X_train.shape[3]])
+            self.input = tf.placeholder(dtype=self.dtype,shape=[None,img_size[0],img_size[1],X_train_shape[3]])
             self.output = self.input
             # Initialize the convolution with the num of channels.
-            self._Initialize_Variables(int(X_train.shape[3]))
+            self._Initialize_Variables(int(X_train_shape[3]))
         else :
             self.input = tf.placeholder(dtype=self.dtype,shape=[None,None])
             self.output = self.input
-            self._Initialize_Variables(int(X_train.shape[1]))
+            self._Initialize_Variables(int(X_train_shape[1]))
         
         if not loss_and_optimize :
             return 
         
-        self.mini_size = kwargs.get('mini_size',X_train.shape[0])
+        self.mini_size = kwargs.get('mini_size',X_train_shape[0])
         self.loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.mini_size)
         self.sess.run(tf.global_variables_initializer())
         grads_and_vars = self.optimizer.compute_gradients(self.loss)
@@ -86,7 +86,7 @@ class NeuralNetworkModel(C.Classifier):
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1),show_graph=False,**kwargs):
         
         
-        self.Compile(X_train=X_train,optimizer=optimizer,loss_fun=loss_fun,kwargs=kwargs)
+        self.Compile(X_train_shape=X_train.shape,optimizer=optimizer,loss_fun=loss_fun,kwargs=kwargs)
         train_losses = list()
         
         for i in range(num_epochs):
