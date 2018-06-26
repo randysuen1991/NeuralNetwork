@@ -1,12 +1,16 @@
 # import the Classifier module
 import sys
-if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' not in sys.path :
+
+if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' or 'C:\\Users\\randysuen\\Classifier-and-Regressor' not in sys.path :
     sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor')
+    sys.path.append('C:\\Users\\randysuen\\Classifier-and-Regressor')
+    
 import Classifier as C
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+
 class NeuralNetworkModel(C.Classifier):
     
         
@@ -23,11 +27,11 @@ class NeuralNetworkModel(C.Classifier):
         self.kwargs = kwargs
         
     # The following two functions connect all the layers.    
-    def _Initialize(self,output_dim,recurrentunit):
-        recurrentunit.input = self.output
-        recurrentunit.Initialize(output_dim)
-        self.output = recurrentunit.output
-        if len(recurrentunit.output.shape) == 4:
+    def _Initialize(self,output_dim,layerunit):
+        layerunit.input = self.output
+        layerunit.Initialize(output_dim)
+        self.output = layerunit.output
+        if len(layerunit.output.shape) == 4:
             return int(self.output.shape[3])
         else :
             return int(self.output.shape[1])
@@ -37,9 +41,9 @@ class NeuralNetworkModel(C.Classifier):
         unit.input = self.input
         unit.Initialize(input_dim)
         self.output = unit.output
-        if len(unit.output.shape) == 4:
+        if len(unit.output.shape) == 4 :
             input_dim = int(unit.output.shape[3])
-        else:
+        else :
             input_dim = int(unit.output.shape[1])
         for unit in self.layers[1:] :
             input_dim = self._Initialize(input_dim,unit)
@@ -50,7 +54,7 @@ class NeuralNetworkModel(C.Classifier):
         self.num_layers += 1    
         
             
-    def Compile(self,X_train_shape,kwargs,optimizer=None,loss_fun=None,loss_and_optimize=True):
+    def Compile(self,X_train_shape,optimizer=None,loss_fun=None,loss_and_optimize=True,**kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
         
@@ -65,17 +69,20 @@ class NeuralNetworkModel(C.Classifier):
             self.output = self.input
             # Initialize the convolution with the num of channels.
             self._Initialize_Variables(int(X_train_shape[3]))
+            
         else :
-            self.input = tf.placeholder(dtype=self.dtype,shape=[None,None])
+            
+            self.input = tf.placeholder(dtype=self.dtype,shape=[None,int(X_train_shape[1])])
             self.output = self.input
             self._Initialize_Variables(int(X_train_shape[1]))
+            
+        self.sess.run(tf.global_variables_initializer())
         
         if not loss_and_optimize :
             return 
         
         self.mini_size = kwargs.get('mini_size',X_train_shape[0])
         self.loss = self.loss_fun(output=self.output,target=self.target,batch_size=self.mini_size)
-        self.sess.run(tf.global_variables_initializer())
         grads_and_vars = self.optimizer.compute_gradients(self.loss)
         self.train = self.optimizer.apply_gradients(grads_and_vars)
         

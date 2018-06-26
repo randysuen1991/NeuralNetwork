@@ -18,8 +18,13 @@ class NeuronLayer(NeuralNetworkUnit):
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(self.input_dim,self.hidden_dim),mean=0,stddev=0.1))
         self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(1,),mean=0,stddev=0.1))
         self.output = tf.matmul(self.input,self.parameters['w']) + self.parameters['b']
-        self.output = self.transfer_fun(self.output)
         
+        # When I don't want the result to be transformed. I will pass None to the transfer_fun.
+        try : 
+            self.output = self.transfer_fun(self.output)
+        except :
+            self.output = self.output
+            
 class SoftMaxLayer():
     def Initialize(self,*args):
         sum_exp = tf.reduce_sum(tf.exp(self.input),axis=1)
