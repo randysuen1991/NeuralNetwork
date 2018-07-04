@@ -3,7 +3,7 @@ import sys
 
 if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' or 'C:\\Users\\randysuen\\Classifier-and-Regressor' not in sys.path :
     sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor')
-    sys.path.append('C:\\Users\\randysuen\\Classifier-and-Regressor')
+    sys.path.append('C:\\Users\\randysuen\\pycodes\\Classifier-and-Regressor')
     
 import Classifier as C
 import tensorflow as tf
@@ -12,13 +12,11 @@ import numpy as np
 import random
 
 class NeuralNetworkModel(C.Classifier):
-    
-        
     def __init__(self,dtype=tf.float64,**kwargs):
         super().__init__()
         self.dtype = dtype
         #[None,None] = [batch_size,label]
-        self.target = tf.placeholder(dtype=dtype,shape=[None,None])
+        self.target = tf.placeholder(dtype=dtype, shape=[None,None])
         self.sess = tf.Session()
         self.layers = list()
         # Presume the image_type being grayscales
@@ -27,26 +25,26 @@ class NeuralNetworkModel(C.Classifier):
         self.kwargs = kwargs
         
     # The following two functions connect all the layers.    
-    def _Initialize(self,output_dim,layerunit):
+    def _Initialize(self, output_dim, layerunit):
         layerunit.input = self.output
         layerunit.Initialize(output_dim)
         self.output = layerunit.output
         if len(layerunit.output.shape) == 4:
             return int(self.output.shape[3])
-        else :
+        else:
             return int(self.output.shape[1])
     
-    def _Initialize_Variables(self,input_dim):
+    def _Initialize_Variables(self, input_dim):
         unit = self.layers[0] 
         unit.input = self.input
         unit.Initialize(input_dim)
         self.output = unit.output
-        if len(unit.output.shape) == 4 :
+        if len(unit.output.shape) == 4:
             input_dim = int(unit.output.shape[3])
         else :
             input_dim = int(unit.output.shape[1])
-        for unit in self.layers[1:] :
-            input_dim = self._Initialize(input_dim,unit)
+        for unit in self.layers[1:]:
+            input_dim = self._Initialize(input_dim, unit)
         
         
     def Build(self,layerunit):
