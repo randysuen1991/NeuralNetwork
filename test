@@ -1,0 +1,14 @@
+import tensorflow as tf
+w = tf.Variable(1.0)
+ema = tf.train.ExponentialMovingAverage(0.9)
+update = tf.assign_add(w, 1.0)
+
+with tf.control_dependencies([update]):
+    ema_op = ema.apply([w])
+ema_val = ema.average(w)
+
+with tf.Session() as sess:
+    tf.global_variables_initializer().run()
+    for i in range(3):
+        sess.run(ema_op)
+        print(sess.run(ema_val))

@@ -4,16 +4,31 @@ import numpy as np
 
 class NeuralNetworkUnit:
     def __init__(self, hidden_dim, input_dim, transfer_fun, dtype=tf.float64):
-        self.input = None
         self.dtype = dtype
         self.hidden_dim = hidden_dim
         self.input_dim = input_dim
         self.transfer_fun = transfer_fun
         self.parameters = dict()
+        self.output = None
+        self._is_train = True
+        self.input = None
+
+    @property
+    def is_train(self):
+        return self._is_train
+
+    @is_train.setter
+    def is_train(self, value):
+        assert value is True or value is False
+        self._is_train = value
+        self._Switch_Structure()
+
+    def _Switch_Structure(self):
+        pass
 
 
 class NeuronLayer(NeuralNetworkUnit):
-    def __init__(self, hidden_dim, input_dim=None, transfer_fun=tf.sigmoid, dtype=tf.float64):
+    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, dtype=tf.float64):
         super().__init__(hidden_dim, input_dim, transfer_fun, dtype=dtype)
 
     def Initialize(self, input_dim):
@@ -50,36 +65,64 @@ class ConvolutionUnit(NeuralNetworkUnit):
         self.dtype = dtype
         self.shape = shape
         self.kwargs = kwargs
+
     def Initialize(self, num_channels):
         shape = list(self.shape)
         shape.insert(2, num_channels)
         shape = tuple(shape)
-        self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=shape,mean=0,stddev=0.1))
-        self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,shape=(shape[-1],),mean=0,stddev=0.1))
-        self.output = tf.nn.conv2d(self.input,self.parameters['w'], strides = self.kwargs.get('strides', [1, 1, 1, 1]),
+        self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
+                                                                             shape=shape, mean=0, stddev=0.1))
+        self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
+                                                                             shape=(shape[-1],), mean=0, stddev=0.1))
+        self.output = tf.nn.conv2d(self.input, self.parameters['w'], strides=self.kwargs.get('strides', [1, 1, 1, 1]),
                                    padding=self.kwargs.get('padding', 'SAME'))
         self.output = self.output + self.parameters['b']
         if self.transfer_fun is not None:
             self.output = self.transfer_fun(self.output)
         
         
-class ResidualBlocl(NeuralNetworkUnit):
+class ResidualBlock(NeuralNetworkUnit):
     pass
 
 
 class Flatten:
+    def __init__(self):
+        self.output = None
+
     def Initialize(self, *args):
         self.output = tf.reshape(self.input, shape=[-1, int(np.prod(self.input.__dict__['_shape'][1:]))])
 
 
 # The input of this layer could only be NeuronLayer.
 class BatchNormalization(NeuralNetworkUnit):
-    def __init__(self, dtype=tf.float64, transfer_fun=None, epsilon=0.01, **kwargs):
+    def __init__(self, dtype=tf.float64, transfer_fun=None, epsilon=0.01, moving_decay=0.9, **kwargs):
         super().__init__(None, None, None)
         self.dtype = dtype
         self.epsilon = epsilon
         self.kwargs = kwargs
         self.transfer_fun = transfer_fun
+        self.ema = tf.train.ExponentialMovingAverage(moving_decay)
+
+    def _Mean_Variance_with_Update(self, mean, var):
+        ema_apply_op = self.ema.apply([mean, var])
+        with tf.control_dependencies([ema_apply_op]):
+            return tf.identity(mean), tf.identity(var)
+
+    def _Switch_Structure(self):
+        if self.is_train is True:
+            mean, var = tf.nn.moments(self.input, [0])
+            mean, var = self._Mean_Variance_with_Update(mean, var)
+            self.output = tf.nn.batch_normalization(self.input, mean, var, self.parameters['beta'],
+                                                    self.parameters['gamma'], self.epsilon)
+        else:
+            mean, var = tf.nn.moments(self.input, [0])
+            self.output = tf.nn.batch_normalization(self.input, self.ema.average(mean), self.ema.average(var),
+                                                    self.parameters['beta'], self.parameters['gamma'],
+                                                    self.epsilon)
+        try:
+            self.output = self.transfer_fun(self.output)
+        except TypeError:
+            self.output = self.output
 
     def Initialize(self, input_dim,  *args):
         self.input_dim = input_dim
@@ -119,17 +162,20 @@ class MaxPooling(NeuralNetworkUnit):
         self.dtype = dtype
         self.shape = shape
         self.kwargs = kwargs
+
     def Initialize(self, *args):
         self.output = tf.nn.avg_pool(value=self.input, ksize=self.shape,
                                      strides=self.kwargs.get('strides', [1, 1, 1, 1]),
                                      padding=self.kwargs.get('padding', 'SAME'))
-    
+
+
 class Dropout(NeuralNetworkUnit):
     def __init__(self, keep_prob, transfer_fun=None, dtype=tf.float64, **kwargs):
-        super().__init__(None,None,transfer_fun)
+        super().__init__(None, None, transfer_fun)
         self.dtype = dtype
         self.kwargs = kwargs
         self.keep_prob = keep_prob
+
     def Initialize(self, *args):
         self.output = tf.nn.dropout(self.input, keep_prob=self.keep_prob)
 
