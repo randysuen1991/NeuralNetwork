@@ -10,17 +10,17 @@ class NeuralNetworkUnit:
         self.transfer_fun = transfer_fun
         self.parameters = dict()
         self.output = None
-        self._is_train = True
+        self._on_train = True
         self.input = None
 
     @property
-    def is_train(self):
-        return self._is_train
+    def on_train(self):
+        return self._on_train
 
-    @is_train.setter
-    def is_train(self, value):
+    @on_train.setter
+    def on_train(self, value):
         assert value is True or value is False
-        self._is_train = value
+        self._on_train = value
         self._Switch_Structure()
 
     def _Switch_Structure(self):
@@ -102,6 +102,8 @@ class BatchNormalization(NeuralNetworkUnit):
         self.kwargs = kwargs
         self.transfer_fun = transfer_fun
         self.ema = tf.train.ExponentialMovingAverage(moving_decay)
+        self.mean = None
+        self.var = None
 
     def _Mean_Variance_with_Update(self, mean, var):
         ema_apply_op = self.ema.apply([mean, var])
@@ -109,14 +111,13 @@ class BatchNormalization(NeuralNetworkUnit):
             return tf.identity(mean), tf.identity(var)
 
     def _Switch_Structure(self):
-        if self.is_train is True:
-            mean, var = tf.nn.moments(self.input, [0])
-            mean, var = self._Mean_Variance_with_Update(mean, var)
+        if self.on_train is True:
+            self.mean, self.var = tf.nn.moments(self.input, [0])
+            mean, var = self._Mean_Variance_with_Update(self.mean, self.var)
             self.output = tf.nn.batch_normalization(self.input, mean, var, self.parameters['beta'],
                                                     self.parameters['gamma'], self.epsilon)
         else:
-            mean, var = tf.nn.moments(self.input, [0])
-            self.output = tf.nn.batch_normalization(self.input, self.ema.average(mean), self.ema.average(var),
+            self.output = tf.nn.batch_normalization(self.input, self.ema.average(self.mean), self.ema.average(self.var),
                                                     self.parameters['beta'], self.parameters['gamma'],
                                                     self.epsilon)
         try:
@@ -124,16 +125,17 @@ class BatchNormalization(NeuralNetworkUnit):
         except TypeError:
             self.output = self.output
 
-    def Initialize(self, input_dim,  *args):
+    def Initialize(self, input_dim, *args):
         self.input_dim = input_dim
+        print(input_dim)
         self.parameters['gamma'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
                                                                                  shape=[self.input_dim], mean=0,
                                                                                  stddev=0.1))
         self.parameters['beta'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
                                                                                 shape=[self.input_dim], mean=0,
                                                                                 stddev=0.1))
-
-        mean, var = tf.nn.moments(self.input, [0])
+        self.mean, self.var = tf.nn.moments(self.input, [0])
+        mean, var = self._Mean_Variance_with_Update(self.mean, self.var)
         self.output = tf.nn.batch_normalization(self.input, mean, var, self.parameters['beta'],
                                                 self.parameters['gamma'], self.epsilon)
         try:
@@ -151,14 +153,15 @@ class AvgPooling(NeuralNetworkUnit):
         self.kwargs = kwargs
 
     def Initialize(self, *args):
-        self.output = tf.nn.avg_pool(value=self.input, ksize=self.shape, strides=self.kwargs.get('strides', [1, 1, 1, 1]),
+        self.output = tf.nn.avg_pool(value=self.input, ksize=self.shape,
+                                     strides=self.kwargs.get('strides', [1, 1, 1, 1]),
                                      padding=self.kwargs.get('padding', 'SAME'))
     
    
 class MaxPooling(NeuralNetworkUnit):
     # The shape is corresponding to each dimension of the input data. 
     def __init__(self, shape, transfer_fun=None, dtype=tf.float64, **kwargs):
-        super().__init__(None,None,transfer_fun)
+        super().__init__(None, None, transfer_fun)
         self.dtype = dtype
         self.shape = shape
         self.kwargs = kwargs

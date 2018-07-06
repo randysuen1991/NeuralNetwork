@@ -12,7 +12,7 @@ import numpy as np
 import random
 
 class NeuralNetworkModel(C.Classifier):
-    def __init__(self,dtype=tf.float64,**kwargs):
+    def __init__(self, dtype=tf.float64, **kwargs):
         super().__init__()
         self.dtype = dtype
         self.target = tf.placeholder(dtype=dtype, shape=[None,None])
@@ -22,7 +22,7 @@ class NeuralNetworkModel(C.Classifier):
         self.num_channels = kwargs.get('num_channels', 1)
         self.num_layers = 0
         self.kwargs = kwargs
-        self.is_train = True
+        self._on_train = True
         self.optimizer = None
         self.loss_fun = None
         self.batch_size = None
@@ -31,20 +31,21 @@ class NeuralNetworkModel(C.Classifier):
         self.output = None
         self.loss = None
         self.train = None
-        self._is_train = None
+        self.eval_model = None
+        self.targ_model = None
 
     @property
-    def is_train(self):
-        return self._is_train
+    def on_train(self):
+        return self._on_train
 
-    @is_train.setter
-    def is_train(self, value):
+    @on_train.setter
+    def on_train(self, value):
         assert value is True or value is False
+        self._on_train = value
         for layer in self.layers:
-            layer._Switch_Structure()
-        self._is_train = value
+            layer.on_train = value
 
-    # The following two functions connect all the layers.    
+    # The following two functions connect all the layers.
     def _Initialize(self, output_dim, layerunit):
         layerunit.input = self.output
         layerunit.Initialize(output_dim)
@@ -61,7 +62,7 @@ class NeuralNetworkModel(C.Classifier):
         self.output = unit.output
         if len(unit.output.shape) == 4:
             input_dim = int(unit.output.shape[3])
-        else :
+        else:
             input_dim = int(unit.output.shape[1])
         for unit in self.layers[1:]:
             input_dim = self._Initialize(input_dim, unit)
@@ -135,7 +136,7 @@ class NeuralNetworkModel(C.Classifier):
                     print('Iteration: %d, train loss: %.4f' % (i, train_loss))
 
         # Training is over.
-        self.is_train = False
+        self.one_train = False
         return train_losses
     
     def Predict(self, X_test):
