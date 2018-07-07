@@ -113,9 +113,9 @@ class BatchNormalization(NeuralNetworkUnit):
 
     def _Switch_Structure(self):
         if self.on_train is True:
-            self.mean, self.var = tf.nn.moments(self.input, [0])
-            mean, var = self._Mean_Variance_with_Update(self.mean, self.var)
-            self.output = tf.nn.batch_normalization(self.input, mean, var, self.parameters['beta'],
+            fc_mean, fc_var = tf.nn.moments(self.input, [0])
+            self.mean, self.var = self._Mean_Variance_with_Update(fc_mean, fc_var)
+            self.output = tf.nn.batch_normalization(self.input, self.mean, self.var, self.parameters['beta'],
                                                     self.parameters['gamma'], self.epsilon)
         else:
             self.parameters['mean'] = self.mean
@@ -130,16 +130,15 @@ class BatchNormalization(NeuralNetworkUnit):
 
     def Initialize(self, input_dim, *args):
         self.input_dim = input_dim
-        print(input_dim)
         self.parameters['gamma'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
                                                                                  shape=[self.input_dim], mean=0,
                                                                                  stddev=0.1))
         self.parameters['beta'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
                                                                                 shape=[self.input_dim], mean=0,
                                                                                 stddev=0.1))
-        self.mean, self.var = tf.nn.moments(self.input, [0])
-        mean, var = self._Mean_Variance_with_Update(self.mean, self.var)
-        self.output = tf.nn.batch_normalization(self.input, mean, var, self.parameters['beta'],
+        fc_mean, fc_var = tf.nn.moments(self.input, [0])
+        self.mean, self.var = self._Mean_Variance_with_Update(fc_mean, fc_var)
+        self.output = tf.nn.batch_normalization(self.input, self.mean, self.var, self.parameters['beta'],
                                                 self.parameters['gamma'], self.epsilon)
         try:
             self.output = self.transfer_fun(self.output)
@@ -150,7 +149,7 @@ class BatchNormalization(NeuralNetworkUnit):
 class AvgPooling(NeuralNetworkUnit):
     # The shape is corresponding to each dimension of the input data. 
     def __init__(self, shape, transfer_fun=None, dtype=tf.float64, **kwargs):
-        super().__init__(None, None, transfer_fun, dtype=dtype)
+        super().__init__(None, None, transfer_fun=transfer_fun, dtype=dtype)
         self.shape = shape
         self.kwargs = kwargs
 
