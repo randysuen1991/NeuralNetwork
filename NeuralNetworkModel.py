@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
+
 class NeuralNetworkModel(C.Classifier):
     def __init__(self, dtype=tf.float64, **kwargs):
         super().__init__()
@@ -33,6 +34,15 @@ class NeuralNetworkModel(C.Classifier):
         self.train = None
         self.eval_model = None
         self.targ_model = None
+
+    def __repr__(self):
+        all_parameters = list()
+        for layer in self.layers:
+            parameters = layer.parameters
+            for key, value in parameters.items():
+                result = self.sess.run(value)
+                all_parameters.append((key, result))
+        return all_parameters
 
     @property
     def on_train(self):
