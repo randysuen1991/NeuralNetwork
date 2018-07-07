@@ -29,8 +29,7 @@ class NeuralNetworkUnit:
 
 class NeuronLayer(NeuralNetworkUnit):
     def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, dtype=tf.float64):
-        super().__init__(hidden_dim, input_dim, transfer_fun, dtype=dtype)
-
+        super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype)
     def Initialize(self, input_dim):
         self.input_dim = input_dim
         self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
@@ -52,6 +51,10 @@ class NeuronLayer(NeuralNetworkUnit):
 
 
 class SoftMaxLayer:
+    def __init__(self):
+        self.input = None
+        self.output = None
+
     def Initialize(self, *args):
         sum_exp = tf.reduce_sum(tf.exp(self.input), axis=1)
         sum_exp = tf.expand_dims(sum_exp, axis=1)
@@ -61,8 +64,7 @@ class SoftMaxLayer:
 class ConvolutionUnit(NeuralNetworkUnit):
     # The shape parameter should be (height, width, num filters)
     def __init__(self, shape, transfer_fun=None, dtype=tf.float64, **kwargs):
-        super().__init__(None, None, transfer_fun)
-        self.dtype = dtype
+        super().__init__(None, None, transfer_fun=transfer_fun, dtype=dtype)
         self.shape = shape
         self.kwargs = kwargs
 
@@ -87,6 +89,7 @@ class ResidualBlock(NeuralNetworkUnit):
 
 class Flatten:
     def __init__(self):
+        self.input = None
         self.output = None
 
     def Initialize(self, *args):
@@ -96,11 +99,9 @@ class Flatten:
 # The input of this layer could only be NeuronLayer.
 class BatchNormalization(NeuralNetworkUnit):
     def __init__(self, dtype=tf.float64, transfer_fun=None, epsilon=0.01, moving_decay=0.9, **kwargs):
-        super().__init__(None, None, None)
-        self.dtype = dtype
+        super().__init__(None, None, transfer_fun=transfer_fun, dtype=dtype)
         self.epsilon = epsilon
         self.kwargs = kwargs
-        self.transfer_fun = transfer_fun
         self.ema = tf.train.ExponentialMovingAverage(moving_decay)
         self.mean = None
         self.var = None
@@ -117,6 +118,8 @@ class BatchNormalization(NeuralNetworkUnit):
             self.output = tf.nn.batch_normalization(self.input, mean, var, self.parameters['beta'],
                                                     self.parameters['gamma'], self.epsilon)
         else:
+            self.parameters['mean'] = self.mean
+            self.parameters['var'] = self.var
             self.output = tf.nn.batch_normalization(self.input, self.ema.average(self.mean), self.ema.average(self.var),
                                                     self.parameters['beta'], self.parameters['gamma'],
                                                     self.epsilon)
@@ -147,8 +150,7 @@ class BatchNormalization(NeuralNetworkUnit):
 class AvgPooling(NeuralNetworkUnit):
     # The shape is corresponding to each dimension of the input data. 
     def __init__(self, shape, transfer_fun=None, dtype=tf.float64, **kwargs):
-        super().__init__(None, None, transfer_fun)
-        self.dtype = dtype
+        super().__init__(None, None, transfer_fun, dtype=dtype)
         self.shape = shape
         self.kwargs = kwargs
 
@@ -161,8 +163,7 @@ class AvgPooling(NeuralNetworkUnit):
 class MaxPooling(NeuralNetworkUnit):
     # The shape is corresponding to each dimension of the input data. 
     def __init__(self, shape, transfer_fun=None, dtype=tf.float64, **kwargs):
-        super().__init__(None, None, transfer_fun)
-        self.dtype = dtype
+        super().__init__(None, None, transfer_fun=transfer_fun, dtype=dtype)
         self.shape = shape
         self.kwargs = kwargs
 
@@ -174,8 +175,7 @@ class MaxPooling(NeuralNetworkUnit):
 
 class Dropout(NeuralNetworkUnit):
     def __init__(self, keep_prob, transfer_fun=None, dtype=tf.float64, **kwargs):
-        super().__init__(None, None, transfer_fun)
-        self.dtype = dtype
+        super().__init__(None, None, transfer_fun=transfer_fun, dtype=dtype)
         self.kwargs = kwargs
         self.keep_prob = keep_prob
 
