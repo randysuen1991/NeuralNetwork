@@ -20,8 +20,10 @@ def example1():
     X_train = X_train[:500, :]
     
     model = NNM.NeuralNetworkModel()
-    model.Build(NNU.NeuronLayer(hidden_dim=256))
-    model.Build(NNU.NeuronLayer(hidden_dim=128))
+    model.Build(NNU.NeuronLayer(hidden_dim=10))
+    model.Build(NNU.BatchNormalization())
+    model.Build(NNU.NeuronLayer(hidden_dim=5, transfer_fun=tf.nn.sigmoid))
+    # model.Build(NNU.BatchNormalization())
     model.Build(NNU.NeuronLayer(hidden_dim=784))
     import time
     t1 = time.time()
@@ -29,19 +31,19 @@ def example1():
               mini_size=40, loss_fun=NNL.NeuralNetworkLoss.MeanSqaured)
     print(time.time()-t1)
     
-    n = 10  # how many digits we will display
+    n = 1  # how many digits we will display
     X_test = mnist.test.images
     X_test = X_test[:n, :]
-    
+
     results = model.Predict(X_test)
-    
+    # model.Print_Output_Detail(X_test)
     # plot the testing images.
     
     plt.figure(figsize=(20, 4))
     for i in range(n):
         # display original
         ax = plt.subplot(2, n, i + 1)
-        plt.imshow(X_test[i].reshape(28, 28))
+        # plt.imshow(X_test[i].reshape(28, 28))
         plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
@@ -52,8 +54,9 @@ def example1():
         plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-    plt.show()
 
+    # plt.show()
+    # print(model)
 
 # In this example, I use Convolution Neural Network to classify the MNIST images.
 def example2():
@@ -94,11 +97,22 @@ def example3():
     model.Build(NNU.Flatten())
     model.Build(NNU.NeuronLayer(hidden_dim=10, dtype=tf.float32))
     model.Build(NNU.SoftMaxLayer())
-    model.Fit(X_train, Y_train,loss_fun=NNL.NeuralNetworkLoss.CrossEntropy, show_graph=True, num_epochs=500)
+    model.Fit(X_train, Y_train, loss_fun=NNL.NeuralNetworkLoss.CrossEntropy, show_graph=True, num_epochs=500)
     print(model.Evaluate(X_test, Y_test))
 #    print(model.sess.run(model.layers[0].parameters['w'][:,:,0,0]))
 #    print(model.layers[0].parameters['w'].shape)
 
+def example4():
+    sess = tf.Session()
+    init = tf.global_variables_initializer()
+    sess.run(init)
+
+    input = tf.constant([[1.0, 2.0, 3.0], [4.0, 7.0, 5.0]])
+    batch_mean, batch_var = tf.nn.moments(input, axes=[0])
+    print(sess.run(batch_mean), sess.run(batch_var), '\n')
+    output = tf.nn.batch_normalization(input, batch_mean, batch_var, 3, 2, 0)
+    print(sess.run(output))
+
 
 if __name__ == '__main__':
-    example3()
+    example1()
