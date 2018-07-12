@@ -22,10 +22,10 @@ class NeuralNetworkModel(C.Classifier):
         self.layers = list()
         # Presume the image_type being grayscales
         self.num_channels = kwargs.get('num_channels', 1)
+        self.on_train = tf.placeholder(tf.bool)
         self.num_layers = 0
         self.kwargs = kwargs
         self.update = False
-        self.on_train = None
         self.optimizer = None
         self.loss_fun = None
         self.batch_size = None
@@ -79,7 +79,6 @@ class NeuralNetworkModel(C.Classifier):
         self.num_layers += 1    
 
     def Compile(self, X_train_shape, optimizer=None, loss_fun=None, loss_and_optimize=True, **kwargs):
-        self.on_train = tf.placeholder(tf.bool)
         self.optimizer = optimizer
         self.loss_fun = loss_fun
         self.batch_size = int(X_train_shape[0])
