@@ -46,6 +46,18 @@ class NeuralNetworkModel(C.Classifier):
                 all_parameters.append((key, result))
         return 'Parameters:{}'.format(all_parameters)
 
+    def __sub__(self, model):
+        new_model = NeuralNetworkModel()
+        new_model.input = self.output - model.output
+        new_model.output = new_model.input
+        return new_model
+
+    def __add__(self, model):
+        new_model = NeuralNetworkModel()
+        new_model.input = self.output + model.output
+        new_model.output = new_model.input
+        return new_model
+
     # The following two functions connect all the layers.
     def _Initialize(self, output_dim, layerunit, **kwargs):
         layerunit.input = self.output
@@ -183,8 +195,28 @@ class NeuralNetworkModel(C.Classifier):
             channel.input = self.output
             self.layers.append(channel)
             channels.append(channel)
-
         return channels
+
+    @staticmethod
+    def Reduce_Mean(model):
+        if len(model.layers) == 0:
+            raise TypeError('There is no output to reduce the mean')
+        last_layer = model.layers[-1]
+        last_layer.Reduce_Mean()
+        model.output = last_layer.output
+
+    # The op could be 'add', 'substract', 'concat'.
+    @staticmethod
+    def Merge(op, model1, model2):
+        if op == 'add':
+            return model1 + model2
+        elif op == 'sub':
+            return model1 - model2
+        elif op == 'concat':
+            new_model = NeuralNetworkModel()
+            new_model.input = tf.concat([model1.output, model2.output], axis=1)
+            new_model.output = new_model.input
+            return new_model
 
     def Print_Output_Detail(self, X_test):
         for layer in self.layers:

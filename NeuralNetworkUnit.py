@@ -37,6 +37,8 @@ class NeuronLayer(NeuralNetworkUnit):
         except TypeError:
             self.output = self.output
 
+    def Readuce_Mean(self):
+        self.output = self.output - tf.reduce_mean(self.output, axis=1, keep_dims=True)
 
 class SoftMaxLayer:
     def __init__(self):
