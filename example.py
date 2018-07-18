@@ -58,6 +58,7 @@ def example1():
     # plt.show()
     # print(model)
 
+
 # In this example, I use Convolution Neural Network to classify the MNIST images.
 def example2():
     from tensorflow.examples.tutorials.mnist import input_data
@@ -89,7 +90,7 @@ def example3():
     import numpy as np
     imgs, labels, shape = np.load('ORL.npy')
     X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs, labels, 2)
-    model = NNM.NeuralNetworkModel(dtype=tf.float32,img_size=(112, 92))
+    model = NNM.NeuralNetworkModel(dtype=tf.float32, img_size=(112, 92))
     #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
     model.Build(NNU.ConvolutionUnit(dtype=tf.float32, shape=(5, 5, 3), transfer_fun=tf.tanh))
     model.Build(NNU.AvgPooling(dtype=tf.float32, shape=(1, 4, 4, 1)))

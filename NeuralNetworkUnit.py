@@ -3,7 +3,12 @@ import numpy as np
 
 
 class NeuralNetworkUnit:
-    def __init__(self, hidden_dim, input_dim, transfer_fun, dtype=tf.float64):
+    def __init__(self, hidden_dim, input_dim, transfer_fun, name, dtype=tf.float64):
+        # father and son store the upper layer and the lower layer of this unit.
+        # if the layer is the first layer, then it is the root; if the layer is the last one, it is the leaf.
+        self.name = name
+        self.father = None
+        self.sons = dict()
         self.dtype = dtype
         self.hidden_dim = hidden_dim
         self.input_dim = input_dim
@@ -15,30 +20,34 @@ class NeuralNetworkUnit:
 
 
 class NeuronLayer(NeuralNetworkUnit):
-    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, dtype=tf.float64):
-        super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype)
+    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
+        super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
 
-    def Initialize(self, input_dim, **kwargs):
+    def Initialize(self, input_dim, counter, on_train, **kwargs):
+        self.on_train = on_train
         self.input_dim = input_dim
-        self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
-                                                                             shape=(self.input_dim, self.hidden_dim),
-                                                                             mean=0,
-                                                                             stddev=0.1))
-
-        self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
-                                                                             shape=(1, self.hidden_dim),
-                                                                             mean=0,
-                                                                             stddev=0.1))
+        counter['Dense'] += 1
+        with tf.variable_scope('Dense'+str(counter['Dense'])):
+            self.parameters['w'] = tf.get_variable(name='w',
+                                                   initializer=tf.truncated_normal(dtype=self.dtype,
+                                                                                   shape=(self.input_dim,
+                                                                                          self.hidden_dim),
+                                                                                   mean=0,
+                                                                                   stddev=0.1))
+            self.parameters['b'] = tf.get_variable(name='b',
+                                                   initializer=tf.truncated_normal(dtype=self.dtype,
+                                                                                   shape=(1, self.hidden_dim),
+                                                                                   mean=0,
+                                                                                   stddev=0.1))
         self.output = tf.matmul(self.input, self.parameters['w']) + self.parameters['b']
-        
-        # When I don't want the result to be transformed. I will pass None to the transfer_fun.
         try:
             self.output = self.transfer_fun(self.output)
         except TypeError:
             self.output = self.output
 
-    def Readuce_Mean(self):
-        self.output = self.output - tf.reduce_mean(self.output, axis=1, keep_dims=True)
+        for unit in self.sons.values():
+            unit.input = self.output
+            unit.Initialize(self.hidden_dim, counter, on_train)
 
 class SoftMaxLayer:
     def __init__(self):
@@ -71,8 +80,17 @@ class ConvolutionUnit(NeuralNetworkUnit):
         self.output = self.output + self.parameters['b']
         if self.transfer_fun is not None:
             self.output = self.transfer_fun(self.output)
-        
-        
+
+
+class Reduce_Mean:
+    def __init__(self):
+        self.input = None
+        self.output = None
+
+    def Initiialize(self):
+        self.output = self.output - tf.reduce_mean(self.output, axis=1, keep_dims=True)
+
+
 class ResidualBlock(NeuralNetworkUnit):
     pass
 
@@ -88,18 +106,18 @@ class Flatten:
 
 # The input of this layer could only be NeuronLayer.
 class BatchNormalization(NeuralNetworkUnit):
-    def __init__(self, dtype=tf.float64, transfer_fun=None, epsilon=0.01, moving_decay=0.99, **kwargs):
-        super().__init__(None, None, transfer_fun=transfer_fun, dtype=dtype)
+    def __init__(self, dtype=tf.float64, transfer_fun=None, epsilon=0.01, moving_decay=0.99, name=None, **kwargs):
+        super().__init__(None, None, transfer_fun=transfer_fun, name=name, dtype=dtype)
         self.epsilon = epsilon
         self.kwargs = kwargs
         self.moving_decay = moving_decay
 
-    def Initialize(self, input_dim, **kwargs):
-        self.on_train = kwargs.get('on_train')
-        if self.on_train is None:
-            raise TypeError('Please set the current mode of the model.')
+    def Initialize(self, input_dim, counter, on_train, **kwargs):
+        counter['BatchNormalization'] += 1
+        self.on_train = on_train
         self.input_dim = input_dim
-        self.output = tf.layers.batch_normalization(self.input, training=self.on_train)
+        with tf.variable_scope('BatchNormalization'+str(counter['BatchNormalization'])):
+            self.output = tf.layers.batch_normalization(self.input, training=self.on_train)
         glb_vars = [var for var in tf.global_variables()]
         self.parameters['moving_variance'] = glb_vars[-1]
         self.parameters['moving_mean'] = glb_vars[-2]
@@ -109,6 +127,10 @@ class BatchNormalization(NeuralNetworkUnit):
             self.output = self.transfer_fun(self.output)
         except TypeError:
             self.output = self.output
+
+        for unit in self.sons.values():
+            unit.input = self.output
+            unit.Initialize(input_dim, counter, on_train)
 
 
 class AvgPooling(NeuralNetworkUnit):

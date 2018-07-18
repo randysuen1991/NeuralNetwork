@@ -13,6 +13,12 @@ import random
 import NeuralNetworkUnit as NNU
 
 
+class NeuralNetworkTree:
+    def __init__(self):
+        self.root = None
+        self.leaves = dict()
+        self.height = 0
+
 class NeuralNetworkModel(C.Classifier):
     def __init__(self, dtype=tf.float64, **kwargs):
         super().__init__()
@@ -20,10 +26,13 @@ class NeuralNetworkModel(C.Classifier):
         self.target = tf.placeholder(dtype=dtype, shape=[None, None])
         self.sess = tf.Session()
         self.layers = list()
+        self.NNTree = NeuralNetworkTree()
+        self.operations = list()
         # Presume the image_type being grayscales
         self.num_channels = kwargs.get('num_channels', 1)
         self.on_train = tf.placeholder(tf.bool)
         self.num_layers = 0
+        self.loss_and_optimize = None
         self.kwargs = kwargs
         self.update = False
         self.optimizer = None
@@ -36,6 +45,7 @@ class NeuralNetworkModel(C.Classifier):
         self.train = None
         self.eval_model = None
         self.targ_model = None
+        self.counter = {'Dense': 0, 'BatchNormalization': 0}
 
     def __repr__(self):
         all_parameters = list()
@@ -58,62 +68,50 @@ class NeuralNetworkModel(C.Classifier):
         new_model.output = new_model.input
         return new_model
 
-    # The following two functions connect all the layers.
-    def _Initialize(self, output_dim, layerunit, **kwargs):
-        layerunit.input = self.output
-        layerunit.Initialize(output_dim, on_train=self.on_train)
-        self.output = layerunit.output
-        if len(layerunit.output.shape) == 4:
-            return int(self.output.shape[3])
-        else:
-            return int(self.output.shape[1])
-    
-    def _Initialize_Variables(self, input_dim, **kwargs):
-        unit = self.layers[0] 
-        unit.input = self.input
-        unit.Initialize(input_dim, on_train=self.on_train)
-        self.output = unit.output
-        if len(unit.output.shape) == 4:
-            input_dim = int(unit.output.shape[3])
-        else:
-            input_dim = int(unit.output.shape[1])
-        for unit in self.layers[1:]:
-            if isinstance(unit, NNU.NeuralNetworkUnit):
-                input_dim = self._Initialize(input_dim, unit)
-            elif isinstance(unit, NeuralNetworkModel):
-                unit.Compile(input_dim)
-
-    def Build(self, layerunit):
+    def Build(self, layerunit, **kwargs):
+        # layerunit is going to connect to the layer with the name.
+        name = kwargs.get('name', 'last')
+        if layerunit.name is None:
+            layerunit.name = 'last'
         if isinstance(layerunit, NNU.BatchNormalization):
             self.update = True
 
-        self.layers.append(layerunit)
-        self.num_layers += 1    
+        if self.NNTree.height == 0:
+            self.NNTree.root = layerunit
+            self.NNTree.leaves[layerunit.name] = layerunit
+            self.NNTree.height += 1
+        else:
+            father = self.NNTree.leaves[name]
+            father.sons[layerunit.name] = layerunit
+            layerunit.father = father
+            self.NNTree.leaves.pop(name)
+            self.NNTree.leaves[layerunit.name] = layerunit
 
     def Compile(self, X_train_shape, optimizer=None, loss_fun=None, loss_and_optimize=True, **kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
         self.batch_size = int(X_train_shape[0])
         # if the data are images, then the first layer should be some layers like convolution, pooling ....
-        
+        unit = self.NNTree.root
         if len(X_train_shape) == 4:
             img_size = self.kwargs.get('img_size')
             # [None,None,None,None]=[batch_size,length,width,num channels]
             if self.input is None:
                 self.input = tf.placeholder(dtype=self.dtype, shape=[None, img_size[0], img_size[1], X_train_shape[3]])
-            self.output = self.input
-            # Initialize the convolution with the num of channels.
-            self._Initialize_Variables(int(X_train_shape[3]))
-            
+            unit.input = self.input
+            unit.Initialize(X_train_shape[3], self.counter, on_train=self.on_train)
+
         else:
             if self.input is None:
                 self.input = tf.placeholder(dtype=self.dtype, shape=[None, int(X_train_shape[1])])
-            self.output = self.input
-            self._Initialize_Variables(int(X_train_shape[1]))
-            
+            unit.input = self.input
+            unit.Initialize(X_train_shape[1], self.counter, on_train=self.on_train)
+
+        # This part should be enhanced when there are multiple outputs.
+        self.output = self.NNTree.leaves['last'].output
         self.sess.run(tf.global_variables_initializer())
-        
-        if not loss_and_optimize:
+        self.loss_and_optimize = loss_and_optimize
+        if not self.loss_and_optimize:
             return 
         
         self.mini_size = kwargs.get('mini_size', X_train_shape[0])
@@ -188,35 +186,25 @@ class NeuralNetworkModel(C.Classifier):
             
         return count/X_test.shape[0], predictions, correct_results
 
-    def Split(self, num_channels):
-        channels = []
-        for i in range(num_channels):
-            channel = NeuralNetworkModel()
-            channel.input = self.output
-            self.layers.append(channel)
-            channels.append(channel)
-        return channels
+    def Split(self, num_splits, name='last', **kwargs):
+        names = kwargs.get('names', [name+str(i) for i in range(num_splits)])
+        unit = self.NNTree.leaves[name]
+        for i in range(num_splits):
+            self.NNTree.leaves[names[i]] = tf.identity(unit.output)
+        self.NNTree.leaves.pop(name)
 
-    @staticmethod
-    def Reduce_Mean(model):
-        if len(model.layers) == 0:
-            raise TypeError('There is no output to reduce the mean')
-        last_layer = model.layers[-1]
-        last_layer.Reduce_Mean()
-        model.output = last_layer.output
+    def Merge(self, op, name, names):
+        print('Compile before Merge!')
 
-    # The op could be 'add', 'substract', 'concat'.
-    @staticmethod
-    def Merge(op, model1, model2):
         if op == 'add':
-            return model1 + model2
-        elif op == 'sub':
-            return model1 - model2
+            output = self.NNTree.leaves[names[0]]
+            for n in names[1:]:
+                output += self.NNTree.leaves[n]
+                self.NNTree.leaves.pop(n)
+            self.NNTree.leaves[name] = output
         elif op == 'concat':
-            new_model = NeuralNetworkModel()
-            new_model.input = tf.concat([model1.output, model2.output], axis=1)
-            new_model.output = new_model.input
-            return new_model
+            pass
+
 
     def Print_Output_Detail(self, X_test):
         for layer in self.layers:
