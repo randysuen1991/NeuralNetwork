@@ -20,15 +20,16 @@ def example1():
     X_train = X_train[:500, :]
     
     model = NNM.NeuralNetworkModel()
-    model.Build(NNU.NeuronLayer(hidden_dim=10))
+    model.Build(NNU.NeuronLayer(hidden_dim=10), input_dim=784)
     model.Build(NNU.BatchNormalization())
     model.Build(NNU.NeuronLayer(hidden_dim=5, transfer_fun=tf.nn.sigmoid))
     # model.Build(NNU.BatchNormalization())
     model.Build(NNU.NeuronLayer(hidden_dim=784))
+
     import time
     t1 = time.time()
-    model.Fit(X_train, X_train, show_graph=True, num_epochs=500,
-              mini_size=40, loss_fun=NNL.NeuralNetworkLoss.MeanSqaured)
+    model.Fit(X_train, X_train, show_graph=False, num_epochs=500,
+              mini_size=40, loss_fun=NNL.NeuralNetworkLoss.MeanSquared)
     print(time.time()-t1)
     
     n = 1  # how many digits we will display
@@ -37,23 +38,24 @@ def example1():
 
     results = model.Predict(X_test)
     # model.Print_Output_Detail(X_test)
+    model.Print_Parameters()
     # plot the testing images.
     
-    plt.figure(figsize=(20, 4))
-    for i in range(n):
+    # plt.figure(figsize=(20, 4))
+    # for i in range(n):
         # display original
-        ax = plt.subplot(2, n, i + 1)
+        # ax = plt.subplot(2, n, i + 1)
         # plt.imshow(X_test[i].reshape(28, 28))
-        plt.gray()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
+        # plt.gray()
+        # ax.get_xaxis().set_visible(False)
+        # ax.get_yaxis().set_visible(False)
     
         # display reconstruction
-        ax = plt.subplot(2, n, i + 1 + n)
-        plt.imshow(results[i].reshape(28, 28))
-        plt.gray()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
+        # ax = plt.subplot(2, n, i + 1 + n)
+        # plt.imshow(results[i].reshape(28, 28))
+        # plt.gray()
+        # ax.get_xaxis().set_visible(False)
+        # ax.get_yaxis().set_visible(False)
 
     # plt.show()
     # print(model)

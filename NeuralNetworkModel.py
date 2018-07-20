@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import NeuralNetworkUnit as NNU
-
+import copy
 
 class NeuralNetworkTree:
     def __init__(self):
@@ -19,32 +19,30 @@ class NeuralNetworkTree:
         self.leaves = dict()
         self.height = 0
 
+
 class NeuralNetworkModel(C.Classifier):
     def __init__(self, dtype=tf.float64, **kwargs):
         super().__init__()
         self.dtype = dtype
-        self.target = tf.placeholder(dtype=dtype, shape=[None, None])
-        self.sess = tf.Session()
-        self.layers = list()
+        self.graph = kwargs.get('graph', tf.Graph())
+        self.sess = tf.Session(graph=self.graph)
         self.NNTree = NeuralNetworkTree()
-        self.operations = list()
         # Presume the image_type being grayscales
         self.num_channels = kwargs.get('num_channels', 1)
-        self.on_train = tf.placeholder(tf.bool)
         self.num_layers = 0
         self.loss_and_optimize = None
         self.kwargs = kwargs
         self.update = False
         self.optimizer = None
+        self.target = None
         self.loss_fun = None
         self.batch_size = None
-        self.mini_size = None
+        self.mini_batch = None
         self.input = None
         self.output = None
         self.loss = None
         self.train = None
-        self.eval_model = None
-        self.targ_model = None
+        self.on_train = None
         self.counter = {'Dense': 0, 'BatchNormalization': 0}
 
     def __repr__(self):
@@ -68,69 +66,72 @@ class NeuralNetworkModel(C.Classifier):
         new_model.output = new_model.input
         return new_model
 
-    def Build(self, layerunit, **kwargs):
-        # layerunit is going to connect to the layer with the name.
-        name = kwargs.get('name', 'last')
-        if layerunit.name is None:
-            layerunit.name = 'last'
-        if isinstance(layerunit, NNU.BatchNormalization):
+    def Build(self, layer, name='last', **kwargs):
+        # layer is going to connect to the layer with the name.
+        if layer.name is None:
+            layer.name = name
+        if isinstance(layer, NNU.BatchNormalization):
             self.update = True
 
         if self.NNTree.height == 0:
-            self.NNTree.root = layerunit
-            self.NNTree.leaves[layerunit.name] = layerunit
+            input_dim = kwargs.get('input_dim', None)
+            if input_dim is None:
+                raise ValueError('You should specify the input dimension of the first layer.')
+            self.NNTree.root = layer
+            self.NNTree.leaves[layer.name] = layer
             self.NNTree.height += 1
+            with self.graph.as_default():
+                self.on_train = tf.placeholder(tf.bool)
+                self.input = tf.placeholder(dtype=self.dtype, shape=[None, input_dim])
+            layer.input = self.input
         else:
+            self.NNTree.height += 1
             father = self.NNTree.leaves[name]
-            father.sons[layerunit.name] = layerunit
-            layerunit.father = father
-            self.NNTree.leaves.pop(name)
-            self.NNTree.leaves[layerunit.name] = layerunit
+            father.sons[layer.name] = layer
+            layer.father = father
+            if kwargs.get('pop', True):
+                self.NNTree.leaves.pop(name)
+            self.NNTree.leaves[layer.name] = layer
+            layer.input = father.output
+            input_dim = int(father.output.shape[1])
 
-    def Compile(self, X_train_shape, optimizer=None, loss_fun=None, loss_and_optimize=True, **kwargs):
+        layer.Initialize(input_dim, self.counter, on_train=self.on_train, graph=self.graph)
+
+        # If there are multiple outputs, the output attribute would be a dictionary. Otherwise, it would be a Tensor.
+        outputs = dict()
+        for key, value in self.NNTree.leaves.items():
+            outputs[key] = value
+        if len(outputs) == 1:
+            self.output = self.NNTree.leaves[layer.name].output
+        else:
+            self.output = outputs
+
+    def Compile(self, optimizer=None, loss_fun=None, loss_and_optimize=True, **kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
-        self.batch_size = int(X_train_shape[0])
-        # if the data are images, then the first layer should be some layers like convolution, pooling ....
-        unit = self.NNTree.root
-        if len(X_train_shape) == 4:
-            img_size = self.kwargs.get('img_size')
-            # [None,None,None,None]=[batch_size,length,width,num channels]
-            if self.input is None:
-                self.input = tf.placeholder(dtype=self.dtype, shape=[None, img_size[0], img_size[1], X_train_shape[3]])
-            unit.input = self.input
-            unit.Initialize(X_train_shape[3], self.counter, on_train=self.on_train)
-
-        else:
-            if self.input is None:
-                self.input = tf.placeholder(dtype=self.dtype, shape=[None, int(X_train_shape[1])])
-            unit.input = self.input
-            unit.Initialize(X_train_shape[1], self.counter, on_train=self.on_train)
-
-        # This part should be enhanced when there are multiple outputs.
-        self.output = self.NNTree.leaves['last'].output
-        self.sess.run(tf.global_variables_initializer())
+        with self.graph.as_default():
+            self.sess.run(tf.global_variables_initializer())
         self.loss_and_optimize = loss_and_optimize
         if not self.loss_and_optimize:
-            return 
-        
-        self.mini_size = kwargs.get('mini_size', X_train_shape[0])
-        self.loss = self.loss_fun(output=self.output, target=self.target, batch_size=self.mini_size)
-
-        # If there is anything needed to be updated, then...
-        if self.update:
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-            with tf.control_dependencies(update_ops):
+            return
+        with self.graph.as_default():
+            self.target = tf.placeholder(dtype=self.dtype, shape=[None, None])
+            self.loss = self.loss_fun(output=self.output, target=self.target, batch_size=self.mini_batch)
+            # If there is anything needed to be updated, then...
+            if self.update:
+                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                with tf.control_dependencies(update_ops):
+                    grads_and_vars = self.optimizer.compute_gradients(self.loss)
+                    self.train = self.optimizer.apply_gradients(grads_and_vars)
+            else:
                 grads_and_vars = self.optimizer.compute_gradients(self.loss)
                 self.train = self.optimizer.apply_gradients(grads_and_vars)
-        else:
-            grads_and_vars = self.optimizer.compute_gradients(self.loss)
-            self.train = self.optimizer.apply_gradients(grads_and_vars)
 
     def Fit(self, X_train, Y_train, loss_fun, num_epochs=5000,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1), show_graph=False, **kwargs):
-
-        self.Compile(X_train_shape=X_train.shape, optimizer=optimizer, loss_fun=loss_fun, kwargs=kwargs)
+        self.batch_size = int(X_train.shape[0])
+        self.mini_batch = kwargs.get('mini_batch', self.batch_size)
+        self.Compile(optimizer=optimizer, loss_fun=loss_fun, kwargs=kwargs)
         train_losses = list()
         
         for i in range(num_epochs):
@@ -140,7 +141,7 @@ class NeuralNetworkModel(C.Classifier):
             # If it is equal to the number of the training set,
             # then it is equal to the batch gradient decent(classic gradient descent).
             # Otherwise, it is equal to mini-batch gradient descent.
-            num_batch = X_train.shape[0] // self.mini_size
+            num_batch = X_train.shape[0] // self.mini_batch
             loss_list = []
             for partition in np.array_split(training, num_batch):
                 partition = list(zip(*partition))
@@ -186,33 +187,59 @@ class NeuralNetworkModel(C.Classifier):
             
         return count/X_test.shape[0], predictions, correct_results
 
-    def Split(self, num_splits, name='last', **kwargs):
-        names = kwargs.get('names', [name+str(i) for i in range(num_splits)])
-        unit = self.NNTree.leaves[name]
-        for i in range(num_splits):
-            self.NNTree.leaves[names[i]] = tf.identity(unit.output)
+    def Split(self, names, name='last', **kwargs):
+        target = self.NNTree.leaves[name]
         self.NNTree.leaves.pop(name)
+        target_father = target.father
+        target_father.sons.pop(name)
+        for n in names:
+            split = copy.deepcopy(target)
+            split.name = n
+            target_father.sons[n] = split
+            self.NNTree.leaves[n] = split
 
-    def Merge(self, op, name, names):
-        print('Compile before Merge!')
-
+    def Merge(self, op, names, output_name='last'):
         if op == 'add':
             output = self.NNTree.leaves[names[0]]
             for n in names[1:]:
                 output += self.NNTree.leaves[n]
                 self.NNTree.leaves.pop(n)
-            self.NNTree.leaves[name] = output
         elif op == 'concat':
             pass
+        if output_name in self.NNTree.leaves:
+            raise ValueError('You should specify a new name to the merged output.')
+        self.NNTree.leaves[output_name] = output
 
+        outputs = dict()
+        for key, value in self.NNTree.leaves.items():
+            outputs[key] = value
+        if len(outputs) == 1:
+            self.output = self.NNTree.leaves[output_name].output
+        else:
+            self.output = outputs
 
     def Print_Output_Detail(self, X_test):
-        for layer in self.layers:
-            print(layer)
-            print('input:')
-            layer_input, layer_output = self.sess.run([layer.input, layer.output],
-                                                      feed_dict={self.input: X_test,
-                                                                 self.on_train: False})
-            print(layer_input)
-            print('output:')
-            print(layer_output)
+        layer = self.NNTree.root
+        self._Print_Output_Detail_Recursive(layer, X_test)
+
+    def _Print_Output_Detail_Recursive(self, layer, X_test):
+        layer_input, layer_output = self.sess.run([layer.input, layer.output],
+                                                  feed_dict={self.input: X_test,
+                                                             self.on_train: False})
+        print(layer)
+        print('input:', layer_input)
+        print('output:', layer_output)
+        for _, son in layer.sons.items():
+            self._Print_Output_Detail_Recursive(son, X_test)
+
+    def Print_Parameters(self):
+        layer = self.NNTree.root
+        self._Print_Parameters_Recursive(layer)
+
+    def _Print_Parameters_Recursive(self, layer):
+        for key, parameter in layer.parameters.items():
+            print(key)
+            value = self.sess.run(parameter)
+            print(value)
+        for _, son in layer.sons.items():
+            self._Print_Parameters_Recursive(son)

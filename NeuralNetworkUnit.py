@@ -15,7 +15,7 @@ class NeuralNetworkUnit:
         self.transfer_fun = transfer_fun
         self.parameters = dict()
         self.output = None
-        self.on_train = True
+        self.on_train = None
         self.input = None
 
 
@@ -23,31 +23,39 @@ class NeuronLayer(NeuralNetworkUnit):
     def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
         super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
 
-    def Initialize(self, input_dim, counter, on_train, **kwargs):
-        self.on_train = on_train
+    def Initialize(self, input_dim, counter, on_train, graph=None, **kwargs):
         self.input_dim = input_dim
         counter['Dense'] += 1
-        with tf.variable_scope('Dense'+str(counter['Dense'])):
-            self.parameters['w'] = tf.get_variable(name='w',
-                                                   initializer=tf.truncated_normal(dtype=self.dtype,
-                                                                                   shape=(self.input_dim,
-                                                                                          self.hidden_dim),
-                                                                                   mean=0,
-                                                                                   stddev=0.1))
-            self.parameters['b'] = tf.get_variable(name='b',
-                                                   initializer=tf.truncated_normal(dtype=self.dtype,
-                                                                                   shape=(1, self.hidden_dim),
-                                                                                   mean=0,
-                                                                                   stddev=0.1))
-        self.output = tf.matmul(self.input, self.parameters['w']) + self.parameters['b']
-        try:
-            self.output = self.transfer_fun(self.output)
-        except TypeError:
-            self.output = self.output
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
+                                                                                 shape=(self.input_dim,
+                                                                                        self.hidden_dim),
+                                                                                 mean=0,
+                                                                                 stddev=0.1))
 
-        for unit in self.sons.values():
-            unit.input = self.output
-            unit.Initialize(self.hidden_dim, counter, on_train)
+            self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
+                                                                                 shape=(1, self.hidden_dim),
+                                                                                 mean=0,
+                                                                                 stddev=0.1))
+            self.output = tf.matmul(self.input, self.parameters['w']) + self.parameters['b']
+            try:
+                self.output = self.transfer_fun(self.output)
+            except TypeError:
+                self.output = self.output
+
+
+class Identity(NeuralNetworkUnit):
+    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
+        super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
+
+    def Initialize(self, input_dim, counter, on_train, graph=None, **kwargs):
+        self.input_dim = input_dim
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            self.output = tf.identity(self.input)
 
 class SoftMaxLayer:
     def __init__(self):
@@ -82,13 +90,12 @@ class ConvolutionUnit(NeuralNetworkUnit):
             self.output = self.transfer_fun(self.output)
 
 
-class Reduce_Mean:
-    def __init__(self):
-        self.input = None
-        self.output = None
+class Reduce_Mean(NeuralNetworkUnit):
+    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
+        super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
 
     def Initiialize(self):
-        self.output = self.output - tf.reduce_mean(self.output, axis=1, keep_dims=True)
+        self.output = self.input - tf.reduce_mean(self.input, axis=1, keep_dims=True)
 
 
 class ResidualBlock(NeuralNetworkUnit):
@@ -112,25 +119,23 @@ class BatchNormalization(NeuralNetworkUnit):
         self.kwargs = kwargs
         self.moving_decay = moving_decay
 
-    def Initialize(self, input_dim, counter, on_train, **kwargs):
+    def Initialize(self, input_dim, counter, on_train, graph=None, **kwargs):
         counter['BatchNormalization'] += 1
-        self.on_train = on_train
         self.input_dim = input_dim
-        with tf.variable_scope('BatchNormalization'+str(counter['BatchNormalization'])):
-            self.output = tf.layers.batch_normalization(self.input, training=self.on_train)
-        glb_vars = [var for var in tf.global_variables()]
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            self.output = tf.layers.batch_normalization(self.input, training=on_train)
+            try:
+                self.output = self.transfer_fun(self.output)
+            except TypeError:
+                self.output = self.output
+            glb_vars = [var for var in tf.global_variables()]
+
         self.parameters['moving_variance'] = glb_vars[-1]
         self.parameters['moving_mean'] = glb_vars[-2]
         self.parameters['beta'] = glb_vars[-3]
         self.parameters['gamma'] = glb_vars[-4]
-        try:
-            self.output = self.transfer_fun(self.output)
-        except TypeError:
-            self.output = self.output
-
-        for unit in self.sons.values():
-            unit.input = self.output
-            unit.Initialize(input_dim, counter, on_train)
 
 
 class AvgPooling(NeuralNetworkUnit):
