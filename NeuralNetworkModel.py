@@ -193,14 +193,21 @@ class NeuralNetworkModel(C.Classifier):
         target_father = target.father
         target_father.sons.pop(name)
         for n in names:
-            split = copy.deepcopy(target)
+            split = NNU.Identity(input=target.output)
+            split.Initialize(input_dim=target.input_dim, counter=self.counter, on_train=self.on_train, graph=self.graph)
             split.name = n
             target_father.sons[n] = split
             self.NNTree.leaves[n] = split
 
+        outputs = dict()
+        for key, value in self.NNTree.leaves.items():
+            outputs[key] = value
+        self.output = outputs
+
     def Merge(self, op, names, output_name='last'):
         if op == 'add':
             output = self.NNTree.leaves[names[0]]
+            self.NNTree.leaves.pop(names[0])
             for n in names[1:]:
                 output += self.NNTree.leaves[n]
                 self.NNTree.leaves.pop(n)
@@ -208,7 +215,10 @@ class NeuralNetworkModel(C.Classifier):
             pass
         if output_name in self.NNTree.leaves:
             raise ValueError('You should specify a new name to the merged output.')
-        self.NNTree.leaves[output_name] = output
+
+        merged = NNU.Identity(input=output)
+        self.NNTree.leaves[output_name] = merged
+        merged.Initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
 
         outputs = dict()
         for key, value in self.NNTree.leaves.items():

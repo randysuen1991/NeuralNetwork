@@ -18,6 +18,12 @@ class NeuralNetworkUnit:
         self.on_train = None
         self.input = None
 
+    def __add__(self, other):
+        return self.output + other.output
+
+    def __sub__(self, other):
+        return self.output - other.output
+
 
 class NeuronLayer(NeuralNetworkUnit):
     def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
@@ -47,8 +53,9 @@ class NeuronLayer(NeuralNetworkUnit):
 
 
 class Identity(NeuralNetworkUnit):
-    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
+    def __init__(self, input, hidden_dim=None, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
         super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
+        self.input = input
 
     def Initialize(self, input_dim, counter, on_train, graph=None, **kwargs):
         self.input_dim = input_dim
@@ -91,11 +98,11 @@ class ConvolutionUnit(NeuralNetworkUnit):
 
 
 class Reduce_Mean(NeuralNetworkUnit):
-    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
+    def __init__(self, hidden_dim=None, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
         super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
 
-    def Initiialize(self):
-        self.output = self.input - tf.reduce_mean(self.input, axis=1, keep_dims=True)
+    def Initialize(self, input_dim=None, counter=None, on_train=None, graph=None, **kwargs):
+        self.output = self.input - tf.reduce_mean(self.input, axis=1, keepdims=True)
 
 
 class ResidualBlock(NeuralNetworkUnit):
