@@ -19,10 +19,10 @@ class NeuralNetworkUnit:
         self.input = None
 
     def __add__(self, other):
-        return self.output + other.output
+        return Identity(self.output + other.output)
 
     def __sub__(self, other):
-        return self.output - other.output
+        return Identity(self.output - other.output)
 
 
 class NeuronLayer(NeuralNetworkUnit):
@@ -63,6 +63,7 @@ class Identity(NeuralNetworkUnit):
             graph = tf.get_default_graph()
         with graph.as_default():
             self.output = tf.identity(self.input)
+
 
 class SoftMaxLayer:
     def __init__(self):

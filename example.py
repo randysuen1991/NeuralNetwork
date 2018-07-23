@@ -37,8 +37,8 @@ def example1():
     X_test = X_test[:n, :]
 
     results = model.Predict(X_test)
-    # model.Print_Output_Detail(X_test)
-    model.Print_Parameters()
+    model.Print_Output_Detail(X_test)
+    # model.Print_Parameters()
     # plot the testing images.
     
     # plt.figure(figsize=(20, 4))

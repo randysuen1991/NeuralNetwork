@@ -190,13 +190,11 @@ class NeuralNetworkModel(C.Classifier):
     def Split(self, names, name='last', **kwargs):
         target = self.NNTree.leaves[name]
         self.NNTree.leaves.pop(name)
-        target_father = target.father
-        target_father.sons.pop(name)
         for n in names:
             split = NNU.Identity(input=target.output)
             split.Initialize(input_dim=target.input_dim, counter=self.counter, on_train=self.on_train, graph=self.graph)
             split.name = n
-            target_father.sons[n] = split
+            target.sons[n] = split
             self.NNTree.leaves[n] = split
 
         outputs = dict()
@@ -204,21 +202,29 @@ class NeuralNetworkModel(C.Classifier):
             outputs[key] = value
         self.output = outputs
 
-    def Merge(self, op, names, output_name='last'):
+    def Merge(self, op, names, output_name='merged_last'):
         if op == 'add':
+
             output = self.NNTree.leaves[names[0]]
-            self.NNTree.leaves.pop(names[0])
+            merged = NNU.Identity(output.output)
+            merged.Initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
+
             for n in names[1:]:
-                output += self.NNTree.leaves[n]
+                output = self.NNTree.leaves[n]
+                merged += output
+                merged.Initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
+
+            for n in names:
+                output = self.NNTree.leaves[n]
+                output.sons[n] = merged
                 self.NNTree.leaves.pop(n)
+
         elif op == 'concat':
             pass
         if output_name in self.NNTree.leaves:
             raise ValueError('You should specify a new name to the merged output.')
 
-        merged = NNU.Identity(input=output)
         self.NNTree.leaves[output_name] = merged
-        merged.Initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
 
         outputs = dict()
         for key, value in self.NNTree.leaves.items():
@@ -228,19 +234,25 @@ class NeuralNetworkModel(C.Classifier):
         else:
             self.output = outputs
 
-    def Print_Output_Detail(self, X_test):
+    def Print_Output_Detail(self, X_test, **kwargs):
         layer = self.NNTree.root
-        self._Print_Output_Detail_Recursive(layer, X_test)
+        self._Print_Output_Detail_Recursive(layer, X_test, sess=kwargs.get('sess', None))
 
-    def _Print_Output_Detail_Recursive(self, layer, X_test):
-        layer_input, layer_output = self.sess.run([layer.input, layer.output],
-                                                  feed_dict={self.input: X_test,
-                                                             self.on_train: False})
+    def _Print_Output_Detail_Recursive(self, layer, X_test, sess):
+        if sess is not None:
+            layer_input, layer_output = sess.run([layer.input, layer.output],
+                                                 feed_dict={self.input: X_test,
+                                                            self.on_train: False})
+        else:
+            layer_input, layer_output = self.sess.run([layer.input, layer.output],
+                                                      feed_dict={self.input: X_test,
+                                                                 self.on_train: False})
         print(layer)
         print('input:', layer_input)
         print('output:', layer_output)
+        # print('sons:', layer.sons)
         for _, son in layer.sons.items():
-            self._Print_Output_Detail_Recursive(son, X_test)
+            self._Print_Output_Detail_Recursive(son, X_test, sess)
 
     def Print_Parameters(self):
         layer = self.NNTree.root
