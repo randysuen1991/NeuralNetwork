@@ -23,7 +23,7 @@ def example1():
     model.Build(NNU.NeuronLayer(hidden_dim=10), input_dim=784)
     model.Build(NNU.BatchNormalization())
     model.Build(NNU.NeuronLayer(hidden_dim=5, transfer_fun=tf.nn.sigmoid))
-    # model.Build(NNU.BatchNormalization())
+    model.Build(NNU.BatchNormalization())
     model.Build(NNU.NeuronLayer(hidden_dim=784))
 
     import time

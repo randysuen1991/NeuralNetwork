@@ -194,8 +194,11 @@ class NeuralNetworkModel(C.Classifier):
             split = NNU.Identity(input=target.output)
             split.Initialize(input_dim=target.input_dim, counter=self.counter, on_train=self.on_train, graph=self.graph)
             split.name = n
-            target.sons[n] = split
             self.NNTree.leaves[n] = split
+            try:
+                target.sons[n] = split
+            except AttributeError:
+                pass
 
         outputs = dict()
         for key, value in self.NNTree.leaves.items():
