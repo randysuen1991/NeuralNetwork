@@ -257,14 +257,21 @@ class NeuralNetworkModel(C.Classifier):
         for _, son in layer.sons.items():
             self._Print_Output_Detail_Recursive(son, X_test, sess)
 
-    def Print_Parameters(self):
+    def Print_Parameters(self, **kwargs):
         layer = self.NNTree.root
-        self._Print_Parameters_Recursive(layer)
+        self._Print_Parameters_Recursive(layer, sess=kwargs.get('sess', None))
 
-    def _Print_Parameters_Recursive(self, layer):
-        for key, parameter in layer.parameters.items():
-            print(key)
-            value = self.sess.run(parameter)
-            print(value)
+    def _Print_Parameters_Recursive(self, layer, sess):
+        if sess is not None:
+            for key, parameter in layer.parameters.items():
+                print(parameter.name)
+                value = sess.run(parameter)
+                print(value)
+        else:
+            for key, parameter in layer.parameters.items():
+                print(key)
+                value = self.sess.run(parameter)
+                print(value)
+
         for _, son in layer.sons.items():
-            self._Print_Parameters_Recursive(son)
+            self._Print_Parameters_Recursive(son, sess)

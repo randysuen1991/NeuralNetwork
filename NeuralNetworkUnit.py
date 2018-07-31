@@ -35,17 +35,20 @@ class NeuronLayer(NeuralNetworkUnit):
         if graph is None:
             graph = tf.get_default_graph()
         with graph.as_default():
-            self.parameters['w'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
-                                                                                 shape=(self.input_dim,
-                                                                                        self.hidden_dim),
-                                                                                 mean=0,
-                                                                                 stddev=0.1))
-
-            self.parameters['b'] = tf.Variable(initial_value=tf.truncated_normal(dtype=self.dtype,
-                                                                                 shape=(1, self.hidden_dim),
-                                                                                 mean=0,
-                                                                                 stddev=0.1))
+            with tf.variable_scope('Dense_'+str(counter['Dense'])):
+                variables = tf.Variable(name='weight', initial_value=tf.truncated_normal(dtype=self.dtype,
+                                                                                         shape=(self.input_dim,
+                                                                                                self.hidden_dim),
+                                                                                         mean=0,
+                                                                                         stddev=0.1))
+                self.parameters['w'] = variables
+                variables = tf.Variable(name='bias', initial_value=tf.truncated_normal(dtype=self.dtype,
+                                                                                       shape=(1, self.hidden_dim),
+                                                                                       mean=0,
+                                                                                       stddev=0.1))
+                self.parameters['b'] = variables
             self.output = tf.matmul(self.input, self.parameters['w']) + self.parameters['b']
+
             try:
                 self.output = self.transfer_fun(self.output)
             except TypeError:
@@ -133,17 +136,17 @@ class BatchNormalization(NeuralNetworkUnit):
         if graph is None:
             graph = tf.get_default_graph()
         with graph.as_default():
-            self.output = tf.layers.batch_normalization(self.input, training=on_train)
+            with tf.variable_scope('BatchNormalization_'+str(counter['BatchNormalization'])):
+                self.output = tf.layers.batch_normalization(self.input, training=on_train)
             try:
                 self.output = self.transfer_fun(self.output)
             except TypeError:
                 self.output = self.output
             glb_vars = [var for var in tf.global_variables()]
-
-        self.parameters['moving_variance'] = glb_vars[-1]
-        self.parameters['moving_mean'] = glb_vars[-2]
-        self.parameters['beta'] = glb_vars[-3]
-        self.parameters['gamma'] = glb_vars[-4]
+            self.parameters['moving_variance'] = glb_vars[-1]
+            self.parameters['moving_mean'] = glb_vars[-2]
+            self.parameters['beta'] = glb_vars[-3]
+            self.parameters['gamma'] = glb_vars[-4]
 
 
 class AvgPooling(NeuralNetworkUnit):
