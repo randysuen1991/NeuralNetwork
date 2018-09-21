@@ -1,17 +1,9 @@
-# import the Classifier module
-import sys
-
-if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor' or 'C:\\Users\\randysuen\\Classifier-and-Regressor' not in sys.path :
-    sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Classifier-and-Regressor')
-    sys.path.append('C:\\Users\\randysuen\\pycodes\\Classifier-and-Regressor')
-    
-import Classifier as C
+from ClassifierAndRegressor.Core import Classifier as C
+from NeuralNetwork import NeuralNetworkUnit as NNU
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-import NeuralNetworkUnit as NNU
-import copy
 
 class NeuralNetworkTree:
     def __init__(self):
