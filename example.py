@@ -68,13 +68,13 @@ def example2():
     X_train = UF.vectors2imgs(X_train, (None, 28, 28, 1))
     model = NNM.NeuralNetworkModel(dtype=tf.float32, img_size=(28, 28))
     # shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
-    model.Build(NNU.ConvolutionUnit(dtype=tf.float32, shape=(5, 5, 3), transfer_fun=tf.tanh))
-    model.Build(NNU.AvgPooling(dtype=tf.float32, shape=(1, 4, 4, 1)))
-    model.Build(NNU.Dropout(keep_prob=0.5))
-    model.Build(NNU.Flatten())
-    model.Build(NNU.NeuronLayer(hidden_dim=10, dtype=tf.float32))
-    model.Build(NNU.SoftMaxLayer())
-    model.Fit(X_train, Y_train, loss_fun=NNL.NeuralNetworkLoss.CrossEntropy, show_graph=True, num_epochs=1000)
+    model.build(NNU.ConvolutionUnit(dtype=tf.float32, shape=(5, 5, 3), transfer_fun=tf.tanh))
+    model.build(NNU.AvgPooling(dtype=tf.float32, shape=(1, 4, 4, 1)))
+    model.build(NNU.Dropout(keep_prob=0.5))
+    model.build(NNU.Flatten())
+    model.build(NNU.NeuronLayer(hidden_dim=10, dtype=tf.float32))
+    model.build(NNU.SoftMaxLayer())
+    model.Fit(X_train, Y_train, loss_fun=NNL.NeuralNetworkLoss.crossentropy, show_graph=True, num_epochs=1000)
 
     X_test = mnist.test.images
     Y_test = mnist.test.labels
@@ -97,7 +97,7 @@ def example3():
     model.build(NNU.NeuronLayer(hidden_dim=10, dtype=tf.float32))
     model.build(NNU.SoftMaxLayer())
     model.fit(x_train, y_train, loss_fun=NNL.NeuralNetworkLoss.crossentropy, show_graph=True, num_epochs=500)
-    print(model.Evaluate(x_test, y_test))
+    # print(model.Evaluate(x_test, y_test))
 #    print(model.sess.run(model.layers[0].parameters['w'][:,:,0,0]))
 #    print(model.layers[0].parameters['w'].shape)
 
@@ -114,4 +114,4 @@ def example4():
 
 
 if __name__ == '__main__':
-    example1()
+    example3()

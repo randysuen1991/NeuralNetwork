@@ -73,10 +73,13 @@ class SoftMaxLayer:
         self.input = None
         self.output = None
 
-    def initialize(self, **kwargs):
-        sum_exp = tf.reduce_sum(tf.exp(self.input), axis=1)
-        sum_exp = tf.expand_dims(sum_exp, axis=1)
-        self.output = tf.divide(tf.exp(self.input), sum_exp)
+    def initialize(self, graph=None, **kwargs):
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            sum_exp = tf.reduce_sum(tf.exp(self.input), axis=1)
+            sum_exp = tf.expand_dims(sum_exp, axis=1)
+            self.output = tf.divide(tf.exp(self.input), sum_exp)
 
 
 class ConvolutionUnit(NeuralNetworkUnit):
@@ -115,7 +118,7 @@ class ReduceMean(NeuralNetworkUnit):
     def __init__(self, hidden_dim=None, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
         super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
 
-    def initialize(self, input_dim=None, counter=None, on_train=None, graph=None, **kwargs):
+    def initialize(self, **kwargs):
         self.output = self.input - tf.reduce_mean(self.input, axis=1, keepdims=True)
 
 
