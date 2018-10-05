@@ -171,10 +171,15 @@ class AvgPooling(NeuralNetworkUnit):
         self.shape = shape
         self.kwargs = kwargs
 
-    def initialize(self, **kwargs):
-        self.output = tf.nn.avg_pool(value=self.input, ksize=self.shape,
-                                     strides=self.kwargs.get('strides', [1, 1, 1, 1]),
-                                     padding=self.kwargs.get('padding', 'SAME'))
+    def initialize(self, counter, graph, **kwargs):
+        counter['AvgPooling'] += 1
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            with tf.variable_scope('AvgPooling_' + str(counter['AvgPooling'])):
+                self.output = tf.nn.avg_pool(value=self.input, ksize=self.shape,
+                                             strides=self.kwargs.get('strides', [1, 1, 1, 1]),
+                                             padding=self.kwargs.get('padding', 'SAME'))
     
    
 class MaxPooling(NeuralNetworkUnit):
@@ -184,10 +189,15 @@ class MaxPooling(NeuralNetworkUnit):
         self.shape = shape
         self.kwargs = kwargs
 
-    def initialize(self, **kwargs):
-        self.output = tf.nn.avg_pool(value=self.input, ksize=self.shape,
-                                     strides=self.kwargs.get('strides', [1, 1, 1, 1]),
-                                     padding=self.kwargs.get('padding', 'SAME'))
+    def initialize(self, counter, graph, **kwargs):
+        counter['MaxPooling'] += 1
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            with tf.variable_scope('MaxPooling_' + str(counter['MaxPooling'])):
+                self.output = tf.nn.avg_pool(value=self.input, ksize=self.shape,
+                                             strides=self.kwargs.get('strides', [1, 1, 1, 1]),
+                                             padding=self.kwargs.get('padding', 'SAME'))
 
 
 class Dropout(NeuralNetworkUnit):
@@ -196,5 +206,10 @@ class Dropout(NeuralNetworkUnit):
         self.kwargs = kwargs
         self.keep_prob = keep_prob
 
-    def initialize(self, **kwargs):
-        self.output = tf.nn.dropout(self.input, keep_prob=self.keep_prob)
+    def initialize(self, counter, graph, **kwargs):
+        counter['Dropout'] += 1
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            with tf.variable_scope('MaxPooling_' + str(counter['MaxPooling'])):
+                self.output = tf.nn.dropout(self.input, keep_prob=self.keep_prob)
