@@ -68,7 +68,7 @@ class Identity(NeuralNetworkUnit):
             self.output = tf.identity(self.input)
 
 
-class SoftMaxLayer:
+class SoftMaxLayer(NeuralNetworkUnit):
     def __init__(self):
         self.input = None
         self.output = None
