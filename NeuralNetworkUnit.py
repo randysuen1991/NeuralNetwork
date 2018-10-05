@@ -111,7 +111,7 @@ class ConvolutionUnit(NeuralNetworkUnit):
                 self.output = self.transfer_fun(self.output)
 
 
-class Reduce_Mean(NeuralNetworkUnit):
+class ReduceMean(NeuralNetworkUnit):
     def __init__(self, hidden_dim=None, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
         super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
 

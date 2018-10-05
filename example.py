@@ -87,7 +87,7 @@ def example2():
 def example3():
     import numpy as np
     imgs, labels, shape = np.load('ORL.npy')
-    X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs, labels, 2)
+    x_train, y_train, x_test, y_test = UF.split_train_test(imgs, labels, 2)
     model = NNM.NeuralNetworkModel(dtype=tf.float32, img_size=(112, 92))
     # shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
     model.build(NNU.ConvolutionUnit(dtype=tf.float32, shape=(5, 5, 3), transfer_fun=tf.tanh))
@@ -96,8 +96,8 @@ def example3():
     model.build(NNU.Flatten())
     model.build(NNU.NeuronLayer(hidden_dim=10, dtype=tf.float32))
     model.build(NNU.SoftMaxLayer())
-    model.fit(X_train, Y_train, loss_fun=NNL.NeuralNetworkLoss.CrossEntropy, show_graph=True, num_epochs=500)
-    print(model.Evaluate(X_test, Y_test))
+    model.fit(x_train, y_train, loss_fun=NNL.NeuralNetworkLoss.crossentropy, show_graph=True, num_epochs=500)
+    print(model.Evaluate(x_test, y_test))
 #    print(model.sess.run(model.layers[0].parameters['w'][:,:,0,0]))
 #    print(model.layers[0].parameters['w'].shape)
 
