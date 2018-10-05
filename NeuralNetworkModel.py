@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
+
 class NeuralNetworkTree:
     def __init__(self):
         self.root = None
@@ -58,7 +59,7 @@ class NeuralNetworkModel(C.Classifier):
         new_model.output = new_model.input
         return new_model
 
-    def Build(self, layer, name='last', **kwargs):
+    def build(self, layer, name='last', **kwargs):
         # layer is going to connect to the layer with the name.
         if layer.name is None:
             layer.name = name
@@ -87,7 +88,7 @@ class NeuralNetworkModel(C.Classifier):
             layer.input = father.output
             input_dim = int(father.output.shape[1])
 
-        layer.Initialize(input_dim, self.counter, on_train=self.on_train, graph=self.graph)
+        layer.initialize(input_dim, self.counter, on_train=self.on_train, graph=self.graph)
 
         # If there are multiple outputs, the output attribute would be a dictionary. Otherwise, it would be a Tensor.
         outputs = dict()
@@ -98,7 +99,7 @@ class NeuralNetworkModel(C.Classifier):
         else:
             self.output = outputs
 
-    def Compile(self, optimizer=None, loss_fun=None, loss_and_optimize=True, **kwargs):
+    def compile(self, optimizer=None, loss_fun=None, loss_and_optimize=True, **kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
         with self.graph.as_default():
@@ -119,29 +120,29 @@ class NeuralNetworkModel(C.Classifier):
                 grads_and_vars = self.optimizer.compute_gradients(self.loss)
                 self.train = self.optimizer.apply_gradients(grads_and_vars)
 
-    def Fit(self, X_train, Y_train, loss_fun, num_epochs=5000,
+    def fit(self, x_train, y_train, loss_fun, num_epochs=5000,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1), show_graph=False, **kwargs):
-        self.batch_size = int(X_train.shape[0])
+        self.batch_size = int(x_train.shape[0])
         self.mini_batch = kwargs.get('mini_batch', self.batch_size)
-        self.Compile(optimizer=optimizer, loss_fun=loss_fun, kwargs=kwargs)
+        self.compile(optimizer=optimizer, loss_fun=loss_fun, kwargs=kwargs)
         train_losses = list()
         
         for i in range(num_epochs):
-            training = list(zip(X_train, Y_train))
+            training = list(zip(x_train, y_train))
             random.shuffle(training)
             # If batch size = 1, then the training process is equal to stochastic gradient decent.
             # If it is equal to the number of the training set,
             # then it is equal to the batch gradient decent(classic gradient descent).
             # Otherwise, it is equal to mini-batch gradient descent.
-            num_batch = X_train.shape[0] // self.mini_batch
+            num_batch = x_train.shape[0] // self.mini_batch
             loss_list = []
             for partition in np.array_split(training, num_batch):
                 partition = list(zip(*partition))
-                X_train_partition = np.array(partition[0])
-                Y_train_partition = np.array(partition[1])
+                x_train_partition = np.array(partition[0])
+                y_train_partition = np.array(partition[1])
                 _, train_loss = self.sess.run(fetches=[self.train, self.loss],
-                                              feed_dict={self.input: X_train_partition,
-                                                         self.target: Y_train_partition,
+                                              feed_dict={self.input: x_train_partition,
+                                                         self.target: y_train_partition,
                                                          self.on_train: True})
                 loss_list.append(train_loss)
                 
@@ -159,32 +160,32 @@ class NeuralNetworkModel(C.Classifier):
 
         return train_losses
     
-    def Predict(self, X_test):
-        results = self.sess.run(fetches=self.output, feed_dict={self.input: X_test,
+    def predict(self, x_test):
+        results = self.sess.run(fetches=self.output, feed_dict={self.input: x_test,
                                                                 self.on_train: False})
         return results
     
     # This is a function for evaluating the accuracy of the classifier.
-    def Evaluate(self, X_test, Y_test):
-        predictions = self.Predict(X_test)
+    def evaluate(self, x_test, y_test):
+        predictions = self.predict(x_test)
         predictions = np.argmax(predictions, axis=1)
         count = 0
         correct_results = []
         for iteration, prediction in enumerate(predictions):
-            if Y_test[iteration, prediction] == 1:
+            if y_test[iteration, prediction] == 1:
                 count += 1
                 correct_results.append(True)
             else:
                 correct_results.append(False)
             
-        return count/X_test.shape[0], predictions, correct_results
+        return count/x_test.shape[0], predictions, correct_results
 
-    def Split(self, names, name='last', **kwargs):
+    def split(self, names, name='last', **kwargs):
         target = self.NNTree.leaves[name]
         self.NNTree.leaves.pop(name)
         for n in names:
             split = NNU.Identity(input=target.output)
-            split.Initialize(input_dim=target.input_dim, counter=self.counter, on_train=self.on_train, graph=self.graph)
+            split.initialize(input_dim=target.input_dim, counter=self.counter, on_train=self.on_train, graph=self.graph)
             split.name = n
             self.NNTree.leaves[n] = split
             try:
@@ -197,17 +198,17 @@ class NeuralNetworkModel(C.Classifier):
             outputs[key] = value
         self.output = outputs
 
-    def Merge(self, op, names, output_name='merged_last'):
+    def merge(self, op, names, output_name='merged_last'):
         if op == 'add':
 
             output = self.NNTree.leaves[names[0]]
             merged = NNU.Identity(output.output)
-            merged.Initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
+            merged.initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
 
             for n in names[1:]:
                 output = self.NNTree.leaves[n]
                 merged += output
-                merged.Initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
+                merged.initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
 
             for n in names:
                 output = self.NNTree.leaves[n]
@@ -229,31 +230,31 @@ class NeuralNetworkModel(C.Classifier):
         else:
             self.output = outputs
 
-    def Print_Output_Detail(self, X_test, **kwargs):
+    def print_output_detail(self, x_test, **kwargs):
         layer = self.NNTree.root
-        self._Print_Output_Detail_Recursive(layer, X_test, sess=kwargs.get('sess', None))
+        self._print_output_detail_recursive(layer, x_test, sess=kwargs.get('sess', None))
 
-    def _Print_Output_Detail_Recursive(self, layer, X_test, sess):
+    def _print_output_detail_recursive(self, layer, x_test, sess):
         if sess is not None:
             layer_input, layer_output = sess.run([layer.input, layer.output],
-                                                 feed_dict={self.input: X_test,
+                                                 feed_dict={self.input: x_test,
                                                             self.on_train: False})
         else:
             layer_input, layer_output = self.sess.run([layer.input, layer.output],
-                                                      feed_dict={self.input: X_test,
+                                                      feed_dict={self.input: x_test,
                                                                  self.on_train: False})
         print(layer)
         print('input:', layer_input)
         print('output:', layer_output)
-        # print('sons:', layer.sons)
+        print('sons:', layer.sons)
         for _, son in layer.sons.items():
-            self._Print_Output_Detail_Recursive(son, X_test, sess)
+            self._print_output_detail_recursive(son, x_test, sess)
 
-    def Print_Parameters(self, **kwargs):
+    def print_parameters(self, **kwargs):
         layer = self.NNTree.root
-        self._Print_Parameters_Recursive(layer, sess=kwargs.get('sess', None))
+        self._print_parameters_recursive(layer, sess=kwargs.get('sess', None))
 
-    def _Print_Parameters_Recursive(self, layer, sess):
+    def _print_parameters_recursive(self, layer, sess):
         if sess is not None:
             for key, parameter in layer.parameters.items():
                 print(parameter.name)
@@ -266,4 +267,4 @@ class NeuralNetworkModel(C.Classifier):
                 print(value)
 
         for _, son in layer.sons.items():
-            self._Print_Parameters_Recursive(son, sess)
+            self._print_parameters_recursive(son, sess)

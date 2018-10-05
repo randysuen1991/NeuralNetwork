@@ -1,13 +1,8 @@
-import sys
-if 'C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Dimension-Reduction-Approaches' not in sys.path:
-    sys.path.append('C:\\Users\\ASUS\\Dropbox\\pycode\\mine\\Dimension-Reduction-Approaches')
-import NeuralNetworkModel as NNM
-import NeuralNetworkUnit as NNU
-import NeuralNetworkLoss as NNL
-import matplotlib.pyplot as plt
-import UtilFun as UF
+import NeuralNetwork.NeuralNetworkModel as NNM
+import NeuralNetwork.NeuralNetworkUnit as NNU
+import NeuralNetwork.NeuralNetworkLoss as NNL
+import DimensionReductionApproaches.UtilFun as UF
 import tensorflow as tf
-import matplotlib.pyplot as plt
 
 
 # In this example, I download mnist dataset from tensorflow and implement autoencoder to the dataset.
@@ -88,12 +83,13 @@ def example2():
     X_test = UF.vectors2imgs(X_test, (None, 28, 28, 1))
     print(model.Evaluate(X_test, Y_test))
 
+
 def example3():
     import numpy as np
     imgs, labels, shape = np.load('ORL.npy')
     X_train, Y_train, X_test, Y_test = UF.split_train_test(imgs, labels, 2)
     model = NNM.NeuralNetworkModel(dtype=tf.float32, img_size=(112, 92))
-    #shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
+    # shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
     model.Build(NNU.ConvolutionUnit(dtype=tf.float32, shape=(5, 5, 3), transfer_fun=tf.tanh))
     model.Build(NNU.AvgPooling(dtype=tf.float32, shape=(1, 4, 4, 1)))
     model.Build(NNU.Dropout(keep_prob=0.5))
