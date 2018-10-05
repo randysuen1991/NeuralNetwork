@@ -152,10 +152,8 @@ class BatchNormalization(NeuralNetworkUnit):
         with graph.as_default():
             with tf.variable_scope('BatchNormalization_'+str(counter['BatchNormalization'])):
                 self.output = tf.layers.batch_normalization(self.input, training=on_train)
-            try:
+            if self.transfer_fun is not None:
                 self.output = self.transfer_fun(self.output)
-            except TypeError:
-                self.output = self.output
             glb_vars = [var for var in tf.global_variables()]
             self.parameters['moving_variance'] = glb_vars[-1]
             self.parameters['moving_mean'] = glb_vars[-2]
