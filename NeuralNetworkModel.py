@@ -99,6 +99,7 @@ class NeuralNetworkModel(C.Classifier):
         else:
             self.output = outputs
 
+    # If the loss fun takes more than two values to compute the loss, those extra  should be stored in kwargs.
     def compile(self, optimizer=None, loss_fun=None, loss_and_optimize=True, **kwargs):
         self.optimizer = optimizer
         self.loss_fun = loss_fun
@@ -109,7 +110,7 @@ class NeuralNetworkModel(C.Classifier):
             return
         with self.graph.as_default():
             self.target = tf.placeholder(dtype=self.dtype, shape=[None, None])
-            self.loss = self.loss_fun(output=self.output, target=self.target, batch_size=self.mini_batch)
+            self.loss = self.loss_fun(output=self.output, target=self.target, batch_size=self.mini_batch, **kwargs)
             # If there is anything needed to be updated, then...
             if self.update:
                 update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -122,8 +123,7 @@ class NeuralNetworkModel(C.Classifier):
 
     def fit(self, x_train, y_train, loss_fun, num_epochs=5000,
             optimizer=tf.train.GradientDescentOptimizer(learning_rate=0.1), show_graph=False, **kwargs):
-        self.batch_size = int(x_train.shape[0])
-        self.mini_batch = kwargs.get('mini_batch', self.batch_size)
+        self.mini_batch = kwargs.get('mini_batch', int(x_train.shape[0]))
         self.compile(optimizer=optimizer, loss_fun=loss_fun, kwargs=kwargs)
         train_losses = list()
         
