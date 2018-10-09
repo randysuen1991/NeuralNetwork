@@ -29,8 +29,9 @@ class NeuronLayer(NeuralNetworkUnit):
     def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
         super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
 
-    def initialize(self, input_dim, counter, on_train, graph=None, **kwargs):
-        self.input_dim = input_dim
+    def initialize(self, counter, graph=None, **kwargs):
+        input_dim = kwargs.get('input_dim')
+        self.input_dim = int(input_dim[1])
         counter['Dense'] += 1
         if graph is None:
             graph = tf.get_default_graph()
@@ -56,30 +57,31 @@ class NeuronLayer(NeuralNetworkUnit):
 
 
 class Identity(NeuralNetworkUnit):
-    def __init__(self, input, hidden_dim=None, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
-        super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
-        self.input = input
+    def __init__(self, name=None, dtype=tf.float64):
+        super().__init__(hidden_dim=None, input_dim=None, transfer_fun=None, dtype=dtype, name=name)
 
-    def initialize(self, input_dim, counter, on_train, graph=None, **kwargs):
-        self.input_dim = input_dim
+    def initialize(self, counter, graph=None, **kwargs):
+        counter['Identity'] += 1
         if graph is None:
             graph = tf.get_default_graph()
         with graph.as_default():
-            self.output = tf.identity(self.input)
+            with tf.variable_scope('Identity_'+str(counter['Identity'])):
+                self.output = tf.identity(self.input)
 
 
 class SoftMaxLayer(NeuralNetworkUnit):
-    def __init__(self):
-        self.input = None
-        self.output = None
+    def __init__(self, name=None):
+        super().__init__(hidden_dim=None, input_dim=None, transfer_fun=None, dtype=None, name=name)
 
-    def initialize(self, graph=None, **kwargs):
+    def initialize(self, counter, graph=None, **kwargs):
+        counter['SoftMax'] += 1
         if graph is None:
             graph = tf.get_default_graph()
         with graph.as_default():
-            sum_exp = tf.reduce_sum(tf.exp(self.input), axis=1)
-            sum_exp = tf.expand_dims(sum_exp, axis=1)
-            self.output = tf.divide(tf.exp(self.input), sum_exp)
+            with tf.variable_scope('SoftMax_' + str(counter['SoftMax'])):
+                sum_exp = tf.reduce_sum(tf.exp(self.input), axis=1)
+                sum_exp = tf.expand_dims(sum_exp, axis=1)
+                self.output = tf.divide(tf.exp(self.input), sum_exp)
 
 
 class ConvolutionUnit(NeuralNetworkUnit):
@@ -89,12 +91,13 @@ class ConvolutionUnit(NeuralNetworkUnit):
         self.shape = shape
         self.kwargs = kwargs
 
-    def initialize(self, input_dim, counter, on_train, num_channels=1, graph=None, **kwargs):
-        self.input_dim = input_dim
-        shape = list(self.shape)
-        shape.insert(2, num_channels)
-        shape = tuple(shape)
+    def initialize(self, counter, graph=None, **kwargs):
         counter['Convolution'] += 1
+        input_dim = kwargs.get('input_dim')
+        shape = list(self.shape)
+        shape.insert(2, int(input_dim[3]))
+        shape = tuple(shape)
+
         if graph is None:
             graph = tf.get_default_graph()
         with graph.as_default():
@@ -126,17 +129,16 @@ class ResidualBlock(NeuralNetworkUnit):
     pass
 
 
-class Flatten:
-    def __init__(self):
-        self.input = None
-        self.output = None
+class Flatten(NeuralNetworkUnit):
+    def __init__(self, name=None):
+        super().__init__(hidden_dim=None, input_dim=None, transfer_fun=None, dtype=None, name=name)
 
     def initialize(self, counter, graph=None, **kwargs):
         counter['Flatten'] += 1
         if graph is None:
             graph = tf.get_default_graph()
         with graph.as_default():
-            self.output = tf.reshape(self.input, shape=[-1, int(np.prod(self.input.__dict__['_shape'][1:]))])
+            self.output = tf.reshape(self.input, shape=[-1, int(np.prod(self.input.__dict__['_shape_val'][1:]))])
 
 
 # The input of this layer could only be NeuronLayer.
@@ -147,9 +149,10 @@ class BatchNormalization(NeuralNetworkUnit):
         self.kwargs = kwargs
         self.moving_decay = moving_decay
 
-    def initialize(self, input_dim, counter, on_train, graph=None, **kwargs):
+    def initialize(self, counter, graph=None, **kwargs):
         counter['BatchNormalization'] += 1
-        self.input_dim = input_dim
+        on_train = kwargs.get('on_train')
+
         if graph is None:
             graph = tf.get_default_graph()
         with graph.as_default():

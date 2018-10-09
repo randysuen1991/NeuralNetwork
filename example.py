@@ -4,35 +4,37 @@ import NeuralNetwork.NeuralNetworkLoss as NNL
 import DimensionReductionApproaches.UtilFun as UF
 import tensorflow as tf
 
+import numpy as np
+import os
 
 # In this example, I download mnist dataset from tensorflow and implement autoencoder to the dataset.
 def example1():
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
-    
-    X_train = mnist.train.images
+
+    x_train = mnist.train.images
     # To reduce computational cost, we let the training size be 500.
-    X_train = X_train[:500, :]
+    x_train = x_train[:500, :]
     
     model = NNM.NeuralNetworkModel()
-    model.Build(NNU.NeuronLayer(hidden_dim=10), input_dim=784)
-    model.Build(NNU.BatchNormalization())
-    model.Build(NNU.NeuronLayer(hidden_dim=5, transfer_fun=tf.nn.sigmoid))
-    model.Build(NNU.BatchNormalization())
-    model.Build(NNU.NeuronLayer(hidden_dim=784))
+    model.build(NNU.NeuronLayer(hidden_dim=10), input_dim=784)
+    model.build(NNU.BatchNormalization())
+    model.build(NNU.NeuronLayer(hidden_dim=5, transfer_fun=tf.nn.sigmoid))
+    model.build(NNU.BatchNormalization())
+    model.build(NNU.NeuronLayer(hidden_dim=784))
 
     import time
     t1 = time.time()
-    model.Fit(X_train, X_train, show_graph=False, num_epochs=500,
-              mini_size=40, loss_fun=NNL.NeuralNetworkLoss.MeanSquared)
+    model.Fit(x_train, x_train, show_graph=False, num_epochs=500,
+              mini_size=40, loss_fun=NNL.NeuralNetworkLoss.meansquared)
     print(time.time()-t1)
     
     n = 1  # how many digits we will display
-    X_test = mnist.test.images
-    X_test = X_test[:n, :]
+    x_test = mnist.test.images
+    x_test = x_test[:n, :]
 
-    results = model.Predict(X_test)
-    model.Print_Output_Detail(X_test)
+    results = model.predict(x_test)
+    model.print_output_detail(x_test)
     # model.Print_Parameters()
     # plot the testing images.
     
@@ -40,7 +42,7 @@ def example1():
     # for i in range(n):
         # display original
         # ax = plt.subplot(2, n, i + 1)
-        # plt.imshow(X_test[i].reshape(28, 28))
+        # plt.imshow(x_test[i].reshape(28, 28))
         # plt.gray()
         # ax.get_xaxis().set_visible(False)
         # ax.get_yaxis().set_visible(False)
@@ -60,12 +62,13 @@ def example1():
 def example2():
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
-    X_train = mnist.train.images
+
+    x_train = mnist.train.images
     # To reduce computational cost, we let the training size be 500.
-    X_train = X_train[:500, :]
-    Y_train = mnist.train.labels
-    Y_train = Y_train[:500, :]
-    X_train = UF.vectors2imgs(X_train, (None, 28, 28, 1))
+    x_train = x_train[:500, :]
+    y_train = mnist.train.labels
+    y_train = y_train[:500, :]
+    x_train = UF.vectors2imgs(x_train, (None, 28, 28, 1))
     model = NNM.NeuralNetworkModel(dtype=tf.float32, img_size=(28, 28))
     # shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
     model.build(NNU.ConvolutionUnit(dtype=tf.float32, shape=(5, 5, 3), transfer_fun=tf.tanh))
@@ -74,30 +77,46 @@ def example2():
     model.build(NNU.Flatten())
     model.build(NNU.NeuronLayer(hidden_dim=10, dtype=tf.float32))
     model.build(NNU.SoftMaxLayer())
-    model.Fit(X_train, Y_train, loss_fun=NNL.NeuralNetworkLoss.crossentropy, show_graph=True, num_epochs=1000)
+    model.fit(x_train, y_train, loss_fun=NNL.NeuralNetworkLoss.crossentropy, show_graph=True, num_epochs=1000)
 
-    X_test = mnist.test.images
-    Y_test = mnist.test.labels
-    X_test = X_test[0:20, :]
-    Y_test = Y_test[0:20, :]
-    X_test = UF.vectors2imgs(X_test, (None, 28, 28, 1))
-    print(model.Evaluate(X_test, Y_test))
+    x_test = mnist.test.images
+    y_test = mnist.test.labels
+    x_test = x_test[0:20, :]
+    y_test = y_test[0:20, :]
+    x_test = UF.vectors2imgs(x_test, (None, 28, 28, 1))
+    print(model.Evaluate(x_test, y_test))
 
 
 def example3():
-    import numpy as np
-    imgs, labels, shape = np.load('ORL.npy')
+    def load_data(filename):
+        this_dir, _ = os.path.split(__file__)
+        data_path = os.path.join(this_dir, 'data', filename)
+        return np.load(data_path)
+
+    imgs, labels, shape = load_data('FERET.npy')
     x_train, y_train, x_test, y_test = UF.split_train_test(imgs, labels, 2)
-    model = NNM.NeuralNetworkModel(dtype=tf.float32, img_size=(112, 92))
-    # shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3
-    model.build(NNU.ConvolutionUnit(dtype=tf.float32, shape=(5, 5, 3), transfer_fun=tf.tanh))
-    model.build(NNU.AvgPooling(dtype=tf.float32, shape=(1, 4, 4, 1)))
-    model.build(NNU.Dropout(keep_prob=0.5))
+    y_train = UF.OneHot(y_train)
+    y_test = UF.OneHot(y_test)
+    model = NNM.NeuralNetworkModel(dtype=tf.float64)
+    # shape=(5,5,3) means the kernel's height=5 width=5 num of ker=3.
+    # first layer should give the input dim, which in this case is (image height, image width, num channel).
+    model.build(NNU.ConvolutionUnit(dtype=tf.float64, shape=(4, 4, 2),
+                                    transfer_fun=tf.tanh), input_dim=x_train.shape[1:])
+    # model.build(NNU.BatchNormalization())
+    # model.build(NNU.Dropout(keep_prob=0.8))
+    # model.build(NNU.ConvolutionUnit(dtype=tf.float64, shape=(2, 2, 4),
+    #                                 transfer_fun=tf.sigmoid))
+
+    # model.build(NNU.AvgPooling(dtype=tf.float64, shape=(1, 4, 4, 1)))
+    model.build(NNU.Dropout(keep_prob=0.8))
     model.build(NNU.Flatten())
-    model.build(NNU.NeuronLayer(hidden_dim=10, dtype=tf.float32))
+    model.build(NNU.NeuronLayer(hidden_dim=shape[1], dtype=tf.float64))
+    model.build(NNU.BatchNormalization())
     model.build(NNU.SoftMaxLayer())
-    model.fit(x_train, y_train, loss_fun=NNL.NeuralNetworkLoss.crossentropy, show_graph=True, num_epochs=500)
-    # print(model.Evaluate(x_test, y_test))
+    model.fit(x_train, y_train, loss_fun=NNL.NeuralNetworkLoss.crossentropy, show_graph=False, num_epochs=501,
+              mini_batch=10, learning_rate=0.5)
+    acc, result, correctness = model.evaluate(x_test, y_test)
+    print(acc, result, correctness)
 #    print(model.sess.run(model.layers[0].parameters['w'][:,:,0,0]))
 #    print(model.layers[0].parameters['w'].shape)
 
