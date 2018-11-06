@@ -17,3 +17,9 @@ class NeuralNetworkLoss:
     def tdsquared(output, target, reward, gamma, **kwargs):
         td_error = reward + gamma * target - output
         return tf.square(td_error)
+
+    # This loss is designed for the Actor Critic reinforcement learning model.
+    @staticmethod
+    def exploss(output, action, td_error, **kwargs):
+        log_prob = tf.log(output[0, action])
+        return tf.reduce_mean(log_prob * td_error)
