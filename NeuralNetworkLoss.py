@@ -22,4 +22,4 @@ class NeuralNetworkLoss:
     @staticmethod
     def exploss(output, action, td_error, **kwargs):
         log_prob = tf.log(output[0, action])
-        return tf.reduce_mean(log_prob * td_error)
+        return -tf.reduce_mean(log_prob * td_error)

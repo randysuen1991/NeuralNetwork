@@ -26,8 +26,9 @@ class NeuralNetworkUnit:
 
 
 class NeuronLayer(NeuralNetworkUnit):
-    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64):
+    def __init__(self, hidden_dim, input_dim=None, transfer_fun=None, name=None, dtype=tf.float64, trainable=True):
         super().__init__(hidden_dim, input_dim, transfer_fun=transfer_fun, dtype=dtype, name=name)
+        self.trainable = trainable
 
     def initialize(self, counter, graph=None, **kwargs):
         input_dim = kwargs.get('input_dim')
@@ -41,12 +42,16 @@ class NeuronLayer(NeuralNetworkUnit):
                                                                                          shape=(self.input_dim,
                                                                                                 self.hidden_dim),
                                                                                          mean=0,
-                                                                                         stddev=0.1))
+                                                                                         stddev=0.1),
+                                        trainable=self.trainable)
+
                 self.parameters['w'] = variables
                 variables = tf.Variable(name='bias', initial_value=tf.truncated_normal(dtype=self.dtype,
                                                                                        shape=(1, self.hidden_dim),
                                                                                        mean=0,
-                                                                                       stddev=0.1))
+                                                                                       stddev=0.1),
+                                        trainable=self.trainable)
+
                 self.parameters['b'] = variables
             self.output = tf.matmul(self.input, self.parameters['w']) + self.parameters['b']
 
