@@ -31,14 +31,22 @@ class NeuralNetworkModel(C.Classifier):
         self.loss_fun = None
         self.batch_size = None
         self.mini_batch = None
-        self.input = None
         self.output = None
+        self._input = None
         self.loss = None
         self.train = None
         self.on_train = None
         self.counter = {'Dense': 0, 'BatchNormalization': 0, 'Convolution': 0, 'MaxPooling': 0, 'AvgPooling': 0,
                         'Dropout': 0, 'Flatten': 0, 'Identity': 0, 'SoftMax': 0}
 
+    @property
+    def input(self):
+        return self._input
+
+    @input.setter
+    def input(self, value):
+        self._input = value
+        self.output = self._input
 
     def __repr__(self):
         all_parameters = list()
@@ -215,9 +223,9 @@ class NeuralNetworkModel(C.Classifier):
             outputs[key] = value
         self.output = outputs
 
+    # merge the splits, in a model, into one.
     def merge(self, op, names, output_name='merged_last'):
         if op == 'add':
-
             output = self.NNTree.leaves[names[0]]
             merged = NNU.Identity(output.output)
             merged.initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
@@ -225,7 +233,6 @@ class NeuralNetworkModel(C.Classifier):
             for n in names[1:]:
                 output = self.NNTree.leaves[n]
                 merged += output
-                merged.initialize(input_dim=None, counter=self.counter, on_train=self.on_train)
 
             for n in names:
                 output = self.NNTree.leaves[n]
