@@ -60,13 +60,11 @@ class NeuralNetworkModel(C.Classifier):
     def __sub__(self, model):
         new_model = NeuralNetworkModel()
         new_model.input = self.output - model.output
-        new_model.output = new_model.input
         return new_model
 
     def __add__(self, model):
         new_model = NeuralNetworkModel()
         new_model.input = self.output + model.output
-        new_model.output = new_model.input
         return new_model
 
     def build(self, layer, name='last', **kwargs):
