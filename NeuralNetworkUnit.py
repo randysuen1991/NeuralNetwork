@@ -89,6 +89,32 @@ class SoftMaxLayer(NeuralNetworkUnit):
                 self.output = tf.divide(tf.exp(self.input), sum_exp)
 
 
+class Relu(NeuralNetworkUnit):
+    def __init__(self, name=None):
+        super().__init__(hidden_dim=None, input_dim=None, transfer_fun=None, dtype=None, name=name)
+
+    def initialize(self, counter, graph=None, **kwargs):
+        counter['Relu'] += 1
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            with tf.variable_scope('Relu_' + str(counter['Relu'])):
+                self.output = tf.nn.relu(self.input)
+
+
+class Sigmoid(NeuralNetworkUnit):
+    def __init__(self, name=None):
+        super().__init__(hidden_dim=None, input_dim=None, transfer_fun=None, dtype=None, name=name)
+
+    def initialize(self, counter, graph=None, **kwargs):
+        counter['Sigmoid'] += 1
+        if graph is None:
+            graph = tf.get_default_graph()
+        with graph.as_default():
+            with tf.variable_scope('Sigmoid_' + str(counter['Sigmoid'])):
+                self.output = tf.nn.sigmoid(self.input)
+
+
 class ConvolutionUnit(NeuralNetworkUnit):
     # The shape parameter should be (height, width, num filters)
     def __init__(self, shape, transfer_fun=None, name=None, dtype=tf.float64, **kwargs):
