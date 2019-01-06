@@ -132,8 +132,6 @@ def example4():
     output = tf.nn.batch_normalization(input, batch_mean, batch_var, 3, 2, 0)
     print(sess.run(output))
 
-def example5():
-    pass
 
 if __name__ == '__main__':
     example3()
