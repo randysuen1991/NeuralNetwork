@@ -120,6 +120,7 @@ def example3():
 #    print(model.sess.run(model.layers[0].parameters['w'][:,:,0,0]))
 #    print(model.layers[0].parameters['w'].shape)
 
+
 def example4():
     sess = tf.Session()
     init = tf.global_variables_initializer()
